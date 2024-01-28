@@ -1,4 +1,4 @@
-import { IHandler, Item } from "./handlerManager"
+import { IHandler, Item } from "./handlers.types"
 
 
 /**
