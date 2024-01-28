@@ -26,4 +26,5 @@ describe('Handler', () => {
         const items = h.process(text)
         expect(items.length).toBe(0)
     })
+
 })

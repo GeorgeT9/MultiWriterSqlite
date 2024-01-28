@@ -1,3 +1,6 @@
+import { IHandler, Item } from "./handlerManager"
+import serialize from "serialize-javascript"
+
 
 /**
  * Выполняет нормализацию и валидацию значения value, 
@@ -5,13 +8,8 @@
  * */
 type PostFunc = (str: string) => string | null
 
-type Item = {
-    value: string,
-    range: [number, number]
-}
 
-
-export class Handler {
+export class Handler implements IHandler {
     private readonly _name: string
     private readonly _regexp: RegExp
     private readonly _postFunc?: PostFunc
