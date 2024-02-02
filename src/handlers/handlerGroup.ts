@@ -1,4 +1,5 @@
 import { IHandlerGroup, Item, IHandler } from "./handlers.types"
+import { MapItems } from "./handlers.types"
 
 
 export class HandlerGroup implements IHandlerGroup {
@@ -13,7 +14,7 @@ export class HandlerGroup implements IHandlerGroup {
         this._handlers = handlers
     }
 
-    process(text: string): Map<string, Item[]> {
+    process(text: string): MapItems {
         const out = new Map()
         for (const h of this._handlers) {
             const items = h.process(text)
