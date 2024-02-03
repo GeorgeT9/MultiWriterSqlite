@@ -1,4 +1,5 @@
 /node_modules
 /dist
 /.vscode
+/src/__fixtures__
 jest.config.js

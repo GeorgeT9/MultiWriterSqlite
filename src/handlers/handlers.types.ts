@@ -22,7 +22,6 @@ export interface IHandlerGroup {
 // строка текста с ее порядковым номером 
 export type Line = [number, string]
 
-
 export type TextBox = {
     line: Line,
     items: MapItems
