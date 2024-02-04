@@ -22,7 +22,7 @@ describe('dirReaderStream', () => {
     it('should return all files names', async () => {
         const reader = dirReaderStream(dir)
         await pipeline(reader, writer)
-        expect(out.length).toBe(6)
+        expect(out.length).toBe(8)
     })
 
     it('shoul return files with only the allowed extension', async () => {
