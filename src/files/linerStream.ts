@@ -10,7 +10,7 @@ export class LinerStream extends Transform {
         super({...options, objectMode: true})
     }
 
-    _transform(chunk: string, encoding: BufferEncoding, callback: TransformCallback): void {
+    _transform(chunk: string, encoding: BufferEncoding, callback: TransformCallback) {
         const data = (this._tail + chunk).split('\n')
         this._tail = data.pop() ?? ""
         for (const el of data) {
@@ -20,7 +20,7 @@ export class LinerStream extends Transform {
         callback()
     }
 
-    _flush(callback: TransformCallback): void {
+    _flush(callback: TransformCallback) {
         if (this._tail) {
             this.push([this._count, this._tail] satisfies Line)
         }
