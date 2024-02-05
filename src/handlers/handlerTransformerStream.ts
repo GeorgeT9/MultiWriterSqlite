@@ -1,5 +1,5 @@
 import { IHandlerGroup, Line, TextBox } from "./handlers.types"
-import { Transform, TransformCallback } from "node:stream"
+import { Transform, TransformCallback, TransformOptions } from "node:stream"
 
 
 /**
@@ -9,10 +9,8 @@ import { Transform, TransformCallback } from "node:stream"
 export class HandlerTransformerStream extends Transform{
     private readonly _handlerGroup: IHandlerGroup 
 
-    constructor(handlerGroup: IHandlerGroup) {
-        super({
-            objectMode: true,
-        })
+    constructor(handlerGroup: IHandlerGroup, highWaterMark: number = 10000) {
+        super({objectMode: true, highWaterMark})
         this._handlerGroup = handlerGroup
     }   
 
