@@ -21,7 +21,7 @@ export class HandlerTransformerStream extends Transform{
             const itemsMap = this._handlerGroup.process(chunk[1])
             const textBox: TextBox = {
                 line: chunk,
-                items: itemsMap
+                items: itemsMap.size ? itemsMap : null
             } 
             this.push(textBox)
             callback(null)

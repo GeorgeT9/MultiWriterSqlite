@@ -33,7 +33,6 @@ describe('general test for processing chain streams', () => {
                 },
                 objectMode: true
             })
-            console.log('start processing file ', fileName)
             await pipeline(textExtractor, liner, handler, writer)
         }
         expect(out.length).toBeGreaterThan(1)
