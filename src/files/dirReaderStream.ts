@@ -3,7 +3,7 @@ import { extname, resolve } from "node:path"
 import { Readable } from "node:stream"
 
 
-async function* genFileNamesFromDir(path: string, onlyThisExts?: string[] ) {
+export async function* genFileNamesFromDir(path: string, onlyThisExts?: string[] ) {
     const dir = await opendir(path, {recursive: true})
     const exts = onlyThisExts?.length ? 
         new Set(onlyThisExts) : 
