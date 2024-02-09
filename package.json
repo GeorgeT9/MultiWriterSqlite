@@ -11,7 +11,9 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.9",
     "@types/jest": "^29.5.11",
+    "@types/knex": "^0.16.1",
     "@types/node": "^20.11.7",
     "@types/serialize-javascript": "^5.0.4",
     "@types/word-extractor": "^1.0.5",
@@ -19,6 +21,8 @@
     "ts-jest": "^29.1.2"
   },
   "dependencies": {
+    "better-sqlite3": "^9.4.0",
+    "knex": "^3.1.0",
     "serialize-javascript": "^6.0.2",
     "word-extractor": "^1.0.4"
   }
