@@ -20,7 +20,6 @@ describe('general test for processing chain streams', () => {
     
     let out: TextBox[] = []
 
-
     it('shoud correct process files', async () => {
         for await (const fileName of genFileNamesFromDir(dirName, 0, ['.txt', '.doc'])) {
             const textExtractor = getTextExtractorFromFile(fileName)
