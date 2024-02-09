@@ -22,7 +22,7 @@ describe('general test for processing chain streams', () => {
 
 
     it('shoud correct process files', async () => {
-        for await (const fileName of genFileNamesFromDir(dirName, ['.txt', '.doc'])) {
+        for await (const fileName of genFileNamesFromDir(dirName, 0, ['.txt', '.doc'])) {
             const textExtractor = getTextExtractorFromFile(fileName)
             const liner = new LinerStream()
             const handler = new HandlerTransformerStream(hg)
