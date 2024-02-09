@@ -6,8 +6,8 @@ export class LinerStream extends Transform {
     _count = 0
     _tail: string = ""
 
-    constructor(options?: TransformOptions) {
-        super({...options, objectMode: true})
+    constructor(highWaterMark: number = 10000) {
+        super({objectMode: true, highWaterMark})
     }
 
     _transform(chunk: string, encoding: BufferEncoding, callback: TransformCallback) {

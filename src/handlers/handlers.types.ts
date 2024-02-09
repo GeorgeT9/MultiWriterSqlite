@@ -24,5 +24,5 @@ export type Line = [number, string]
 
 export type TextBox = {
     line: Line,
-    items: MapItems
+    items: MapItems | null
 }
