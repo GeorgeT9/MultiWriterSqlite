@@ -55,23 +55,22 @@ export const getSqliteWriter: FactoryFileWriter = async (fileName: string) => {
                 }, 'id')
             )).then(textBoxIdArray => {
                 // вставляем items для каждого textBox
-                textBoxIdArray
+                return Promise.all(textBoxIdArray
                     .flat()
                     // каждому textBox id сопоставляется в кортеже textBox
                     .map(({ id }, i) => [id, chunks[i].chunk] as const)
                     // отбрасываем кортежи, где textBox не содержит items
                     .filter(([_, chunk]) => chunk.items?.size)
-                    .forEach(([id, chunk]) => {
+                    .map(([id, chunk]) => {
                         const items = extractItemValues(chunk)
-                        console.log(items)
-                        part_conn<ItemDb>('values')
+                        return part_conn<ItemDb>('values')
                             .transacting(trxPart)
                             .insert(items.map(item => ({
                                 value: item.value,
                                 position: JSON.stringify(item.range),
                                 textBoxId: id
                             })))
-                    })
+                    }))
             })
                 .then(() => callback(null))
                 .catch(err => callback(err))
