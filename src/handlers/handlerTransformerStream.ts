@@ -9,7 +9,7 @@ import { Transform, TransformCallback, TransformOptions } from "node:stream"
 export class HandlerTransformerStream extends Transform{
     private readonly _handlerGroup: IHandlerGroup 
 
-    constructor(handlerGroup: IHandlerGroup, highWaterMark: number = 10000) {
+    constructor(handlerGroup: IHandlerGroup, highWaterMark: number = 10_000) {
         super({objectMode: true, highWaterMark})
         this._handlerGroup = handlerGroup
     }   

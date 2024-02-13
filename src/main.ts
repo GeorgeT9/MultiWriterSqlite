@@ -15,7 +15,7 @@ import { FileDb } from "./database/sqlite/schema"
 
 
 async function main() {
-    const fileName = resolve(__dirname, "D:/JsApp/tritoneN/src/__fixtures__/data/data1.csv")
+    const fileName = resolve(__dirname, "D:/udata/rus/beeline.csv")
     // 149-79-8816
     const hg = new HandlerGroup(new Handler('phone', /\d{3}-\d{2}-\d{4}/g, (str) => str.replace('-', '')))
     const writer = await getFactoryFileWriter(StoreType.Sqlite)(fileName)

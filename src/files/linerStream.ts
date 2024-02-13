@@ -6,7 +6,7 @@ export class LinerStream extends Transform {
     _count = 0
     _tail: string = ""
 
-    constructor(highWaterMark: number = 10000) {
+    constructor(highWaterMark: number = 10_000) {
         super({objectMode: true, highWaterMark})
     }
 

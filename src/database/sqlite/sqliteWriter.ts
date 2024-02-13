@@ -43,7 +43,7 @@ export const getSqliteWriter: FactoryFileWriter = async (fileName: string) => {
 
     const writer = new Writable({
         objectMode: true,
-        highWaterMark: 1000,
+        highWaterMark: 10_000,
         writev(chunks: { chunk: TextBox }[], callback: (error: Error | null) => void) {
             // добавляем все textBoxs  получаем их id
             Promise.all(chunks.map(({ chunk }) => part_conn<TextBoxDb>('text_boxs')
