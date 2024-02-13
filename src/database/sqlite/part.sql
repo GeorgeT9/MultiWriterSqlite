@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS text_boxs (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    id         INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     numberLine INTEGER NOT NULL,
     text       TEXT,
     fileId     INTEGER NOT NULL

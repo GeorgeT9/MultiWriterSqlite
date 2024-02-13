@@ -1,0 +1,16 @@
+CREATE TABLE IF NOT EXISTS parts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL
+);
+
+
+CREATE TABLE IF NOT EXISTS files (
+    id       INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    fileName TEXT    UNIQUE
+                     NOT NULL,
+    mTimeMs  NUMERIC NOT NULL,
+    sizeKb   INTEGER NOT NULL,
+    partId   INTEGER NOT NULL
+                     REFERENCES parts (id) ON DELETE CASCADE
+)
+
+INSERT INTO parts VALUES (0)

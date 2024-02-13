@@ -1,5 +1,5 @@
 import { resolve } from "node:path"
-import { genFileNamesFromDir } from "./files/dirReaderStream"
+import { genFileNamesFromDir } from "./files/dirReader"
 import { LinerStream } from "./files/linerStream"
 import { getTextExtractorFromFile } from "./files/textExtractors/textExtractor"
 import { Handler } from "./handlers/handler"

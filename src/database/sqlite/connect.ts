@@ -1,4 +1,4 @@
-import cfg from "../config.json"
+import cfg from "../../config.json"
 import { resolve } from "node:path"
 import { readFileSync } from "node:fs"
 import { Knex, knex } from "knex"
@@ -8,8 +8,7 @@ import { Database } from "better-sqlite3"
 
 const MASTER_DB_NAME = 'master.db'
 const PART_DB_PREFIX_NAME = 'part'
-const CREATE_PART_DB_SQL = './part.sql'
-
+const CREATE_PART_DB_SQL_FILE = 'part.sql'
 
 const dbMaster = knex({
     client: 'better-sqlite3',
@@ -28,6 +27,7 @@ const dbMaster = knex({
             }
         }
     },
+    useNullAsDefault: true,
     acquireConnectionTimeout: 5000
 })
 
@@ -52,13 +52,14 @@ export function getConnectToPartDb(idPart: number): Knex {
             connection: {
                 filename: resolve(cfg.storeDir, `${PART_DB_PREFIX_NAME}_${idPart}.db`),
             },
+            useNullAsDefault: true,
             pool: {
                 afterCreate: (conn: Database, done: (err: Error | null, conn: Database) => void) => {
                     try {
                         conn.pragma('foreign_keys=1')
                         conn.pragma('journal_mode=WAL')
                         const sqlInstructions = readFileSync(
-                            resolve(__dirname, CREATE_PART_DB_SQL), 
+                            resolve(cfg.storeDir, CREATE_PART_DB_SQL_FILE), 
                             {encoding: 'utf8'}
                         ) 
                         conn.exec(sqlInstructions)
@@ -84,3 +85,5 @@ export async function closeAllConnections() {
         [dbMaster.destroy(), ...[...partConnections.values()].map(conn => conn.destroy())]
     )
 }
+
+
