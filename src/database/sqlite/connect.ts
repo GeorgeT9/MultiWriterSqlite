@@ -19,7 +19,6 @@ const dbMaster = knex({
         afterCreate: (conn: Database, done: (err: Error | null, conn: Database) => void) => {
             try {
                 conn.pragma('foreign_keys=1')
-                conn.pragma('journal_mode=WAL')
                 done(null, conn)
             } catch (err) {
                 console.error('Ошибка при подключении к master db: ', (err as Error).message)
@@ -57,7 +56,6 @@ export function getConnectToPartDb(idPart: number): Knex {
                 afterCreate: (conn: Database, done: (err: Error | null, conn: Database) => void) => {
                     try {
                         conn.pragma('foreign_keys=1')
-                        conn.pragma('journal_mode=WAL')
                         const sqlInstructions = readFileSync(
                             resolve(cfg.storeDir, CREATE_PART_DB_SQL_FILE), 
                             {encoding: 'utf8'}

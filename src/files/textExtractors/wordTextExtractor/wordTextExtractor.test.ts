@@ -26,7 +26,6 @@ describe('WordTextExtractor', () => {
         const reader = wordTextExtractor(docFile)
         await pipeline(reader, writer)
         expect(out.length).toBe(1)
-        console.log(out)
     })
 
 })

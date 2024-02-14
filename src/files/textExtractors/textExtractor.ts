@@ -1,6 +1,6 @@
 import { extname } from "node:path"
 import { createReadStream } from "node:fs"
-import { wordTextExtractor } from "./wordTextExtractor"
+import { wordTextExtractor } from "./wordTextExtractor/wordTextExtractor"
 
 
 export function getTextExtractorFromFile(fileName: string) {
@@ -10,7 +10,7 @@ export function getTextExtractorFromFile(fileName: string) {
             return wordTextExtractor(fileName)
         case '.csv':
         case '.txt':
-            return createReadStream(fileName)
+            return createReadStream(fileName, {highWaterMark: 16*1024})
         default:
             throw new Error(`Текстовый экстрактор для файл ${fileName} не определен`)
     }
