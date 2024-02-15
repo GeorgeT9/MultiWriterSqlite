@@ -1,5 +1,5 @@
 import { Writable } from "stream";
-import { getSqliteWriter } from "./sqlite/sqliteWriter"
+import { getSqliteWriter } from "./sqlite/sqliteBlockWriter"
 
 
 /**

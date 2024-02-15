@@ -8,23 +8,21 @@ import { HandlerGroup } from "./handlers/handlerGroup"
 import { Handler } from "./handlers/handler"
 import { StoreType } from "./database/fileWriter"
 import { closeAllConnections } from "./database/sqlite/connect"
-import { Writable } from "node:stream"
-import { getConnectionMasterDb } from "./database/sqlite/connect"
-import { FileDb } from "./database/sqlite/schema"
-
 
 
 async function main() {
     const fileName = resolve(__dirname, "D:/udata/rus/wildberries.csv")
     const hg = new HandlerGroup(new Handler('phone', /\d{11}/g))
     const writer = await getFactoryFileWriter(StoreType.Sqlite)(fileName)
-
+    
+    console.time('pipeline')
     await pipeline(
         getTextExtractorFromFile(fileName),
         new LinerStream(),
         new HandlerTransformerStream(hg),
         writer
     )
+    console.timeEnd('pipeline')
 }
 
 main()
