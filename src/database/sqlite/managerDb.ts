@@ -109,6 +109,15 @@ class ManagerDb {
             .insert({ created: new Date() }, 'id')
         return res[0]['id']
     }
+
+    async closeAllConnect() {
+        return Promise.all(
+            [
+                this._connMaster.destroy(),
+                ...[...this._connPartMap.values()].map(conn => conn.destroy)        
+            ]
+        )
+    }
 }
 
 

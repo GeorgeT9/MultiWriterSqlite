@@ -7,7 +7,8 @@ import { pipeline } from "node:stream/promises"
 import { HandlerGroup } from "./handlers/handlerGroup"
 import { Handler } from "./handlers/handler"
 import { StoreType } from "./database/fileWriter"
-import { closeAllConnections } from "./database/sqlite/connect"
+import { managerDb } from "./database/sqlite/managerDb"
+
 
 
 async function main() {
@@ -30,11 +31,11 @@ main()
         console.error(err)
     })
     .finally(() => {
-        closeAllConnections()
+        managerDb.closeAllConnect()
     })
 
 process.once('uncaughtExceptionMonitor', (err) => {
     console.error('uncaughtException!!!!')
-    closeAllConnections()
+    managerDb.closeAllConnect()
 })
 
