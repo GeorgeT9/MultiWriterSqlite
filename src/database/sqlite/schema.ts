@@ -28,4 +28,5 @@ export interface FileDb {
 
 export interface PartDb {
     id: number
+    created: Date
 }

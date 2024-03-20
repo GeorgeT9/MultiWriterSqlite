@@ -9,14 +9,15 @@ import { stat } from "node:fs/promises"
 export const getSqliteWriter: FactoryFileWriter = async (fileName: string) => {
 
     const partId = 0 // TODO: жеское назначение id part
-    const master_connect = getConnectionMasterDb()
-    const part_connect = getConnectToPartDb(partId)
-    const master_trx = await master_connect.transaction()
-    const part_trx = await part_connect.transaction()
+    const masterConnect = getConnectionMasterDb()
+    const partConnect = getConnectToPartDb(partId)
+    // транзакции в обе БД коммитятся и отклоняются синхронно
+    const masterTrx = await masterConnect.transaction()
+    const partTrx = await partConnect.transaction()
     // статистика по файлу
     const fileStat = await stat(fileName)
     // записываем файл в БД и получаем его id
-    const fileId: number = (await master_trx<FileDb>('files')
+    const fileId: number = (await masterTrx<FileDb>('files')
         .insert({
             fileName,
             mTimeMs: fileStat.mtimeMs,
@@ -25,16 +26,17 @@ export const getSqliteWriter: FactoryFileWriter = async (fileName: string) => {
         }, 'id'))[0].id
     console.log(fileName, ' id: ', fileId)
 
+
     class SqliteWriter extends Writable {
 
         private readonly _buffer: TextBox[]
         private readonly _bufferLimit
 
-        constructor(highWaterMark: number = 20_000) {
+        constructor(highWaterMark: number = 10_000) {
             super({ highWaterMark, objectMode: true })
             // буфер для промежуточного накопления данных
             this._buffer = []
-            this._bufferLimit = highWaterMark / 2
+            this._bufferLimit = highWaterMark
         }
 
         private extractItemValues(tb: TextBox) {
@@ -44,10 +46,10 @@ export const getSqliteWriter: FactoryFileWriter = async (fileName: string) => {
             return []
         }
 
-        private async flush() {
+        private async flushBuffer() {
             // записываем textBoxs
             const idTextBoxs = await Promise.all(this._buffer.map(tb => {
-                return part_trx<TextBoxDb>('text_boxs')
+                return partTrx<TextBoxDb>('text_boxs')
                     .insert({
                         fileId: fileId,
                         numberLine: tb.line[0],
@@ -62,7 +64,7 @@ export const getSqliteWriter: FactoryFileWriter = async (fileName: string) => {
                     .filter(([_, tb]) => tb.items?.size)
                     .map(([idTb, tb]) => {
                         const items = this.extractItemValues(tb)
-                        part_trx<ItemDb>('values')
+                        partTrx<ItemDb>('values')
                             .insert(items.map(item => ({
                                 value: item.value,
                                 position: JSON.stringify(item.range),
@@ -77,7 +79,7 @@ export const getSqliteWriter: FactoryFileWriter = async (fileName: string) => {
         _write(chunk: TextBox, encoding: BufferEncoding, callback: (error?: Error | null) => void): void {
             this._buffer.push(chunk)
             if (this._buffer.length >= this._bufferLimit) {
-                this.flush()
+                this.flushBuffer()
                     .then(() => callback(null))
                     .catch(err => callback(err))
             } else {
@@ -87,10 +89,10 @@ export const getSqliteWriter: FactoryFileWriter = async (fileName: string) => {
         }
 
         _final(callback: (error?: Error | null) => void): void {
-            this.flush()
+            this.flushBuffer()
                 .then(() => {
-                    master_trx.commit()
-                        .then(() => part_trx.commit())
+                    masterTrx.commit()
+                        .then(() => partTrx.commit())
                         .then(() => callback())
                 })
                 .catch(err => callback(err))
@@ -99,8 +101,8 @@ export const getSqliteWriter: FactoryFileWriter = async (fileName: string) => {
 
     return new SqliteWriter()
         .once('error', (err) => {
-            master_trx.rollback()
-            part_trx.rollback()
+            masterTrx.rollback()
+            partTrx.rollback()
             console.error(`${fileName} - error : ${err.message}`)
         })
         .once('finish', () => {
