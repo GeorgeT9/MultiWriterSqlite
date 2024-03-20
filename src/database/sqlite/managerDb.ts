@@ -16,7 +16,7 @@ class ManagerDb {
     private readonly MASTER_DB_NAME = 'master.db'               // имя мастер базы данных
     private readonly PART_DB_PREFIX_NAME = 'part'               // префикс имени баз данных part
     private readonly INITIAL_PART_DB_SQL_FILE = 'part.sql'      // имя файла с инструкциями для создания part db
-    private readonly PART_SIZE_LIMIT = 1 * 1024 * 1024   // значение, при привышении которого данная part db больше не используется
+    private readonly PART_SIZE_LIMIT_kB = 100 * 1024   // значение, при привышении которого данная part db больше не используется
 
     constructor() {
         this._connMaster = this.getConnectionMaster()
@@ -24,7 +24,7 @@ class ManagerDb {
     }
 
     /** создание подключения к мастер базе */
-    private getConnectionMaster() {
+    getConnectionMaster() {
         return knex({
             client: 'better-sqlite3',
             connection: {
@@ -47,9 +47,9 @@ class ManagerDb {
 
     }
     
-    /** Получить (при необходимость создать новое) подключение к partDb */
-    async getPartConnect(idPart: number) {
-        // если коннекта к partDb с idPart нет, то создаем его 
+    /** Получить (при необходимость создать новое) подключение к partDb. Вернет номер подключения и само подслючение */
+    async getPartConnect() {
+        const idPart = await this.getPartId()
         if (!this._connPartMap.has(idPart)) {
             const conn = knex({
                 client: 'better-sqlite3',
@@ -76,7 +76,7 @@ class ManagerDb {
             })
             this._connPartMap.set(idPart, conn)
         }
-        return this._connPartMap.get(idPart)
+        return [idPart, this._connPartMap.get(idPart)!] as const
     }
 
     /** Получить id partDb для записи */
@@ -85,7 +85,7 @@ class ManagerDb {
         console.debug(partsSize)
         // выбираем только partId, которые удоветворяют лимиту по размеру
         const partsForUsing = partsSize
-            .filter(part => part.sizeKb < this.PART_SIZE_LIMIT)
+            .filter(part => part.sizeKb < this.PART_SIZE_LIMIT_kB)
         if (partsForUsing.length > 0) {
             return partsForUsing[0]['partId']
         } else {

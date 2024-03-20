@@ -1,16 +1,16 @@
 import { Writable, WritableOptions } from "node:stream"
 import { FactoryFileWriter } from "../fileWriter"
 import { TextBox } from "../../handlers/handlers.types"
-import { closeAllConnections, getConnectToPartDb, getConnectionMasterDb } from "./connect"
 import { FileDb, ItemDb, TextBoxDb } from "./schema"
 import { stat } from "node:fs/promises"
+import { managerDb } from "./managerDb"
+
 
 
 export const getSqliteWriter: FactoryFileWriter = async (fileName: string) => {
 
-    const partId = 0 // TODO: жеское назначение id part
-    const masterConnect = getConnectionMasterDb()
-    const partConnect = getConnectToPartDb(partId)
+    const masterConnect = managerDb.getConnectionMaster()
+    const [partId, partConnect] = await managerDb.getPartConnect()
     // транзакции в обе БД коммитятся и отклоняются синхронно
     const masterTrx = await masterConnect.transaction()
     const partTrx = await partConnect.transaction()
