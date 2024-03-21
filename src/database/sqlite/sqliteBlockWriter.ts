@@ -24,7 +24,7 @@ export const getSqliteWriter: FactoryFileWriter = async (fileName: string) => {
             partId,
             sizeKb: Math.round(fileStat.size / 1024)
         }, 'id'))[0].id
-    console.log(fileName, ' id: ', fileId)
+    console.log(fileName)
 
 
     class SqliteWriter extends Writable {
@@ -46,8 +46,9 @@ export const getSqliteWriter: FactoryFileWriter = async (fileName: string) => {
             return []
         }
 
+        /** Записываем в БД все данные, накопленные в буфере */
         private async flushBuffer() {
-            // записываем textBoxs
+            // записываем textBoxs, получаем их id
             const idTextBoxs = await Promise.all(this._buffer.map(tb => {
                 return partTrx<TextBoxDb>('text_boxs')
                     .insert({
@@ -64,7 +65,7 @@ export const getSqliteWriter: FactoryFileWriter = async (fileName: string) => {
                     .filter(([_, tb]) => tb.items?.size)
                     .map(([idTb, tb]) => {
                         const items = this.extractItemValues(tb)
-                        partTrx<ItemDb>('values')
+                        return partTrx<ItemDb>('items')
                             .insert(items.map(item => ({
                                 value: item.value,
                                 position: JSON.stringify(item.range),

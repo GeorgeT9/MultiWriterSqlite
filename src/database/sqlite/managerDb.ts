@@ -16,7 +16,7 @@ class ManagerDb {
     private readonly MASTER_DB_NAME = 'master.db'               // имя мастер базы данных
     private readonly PART_DB_PREFIX_NAME = 'part'               // префикс имени баз данных part
     private readonly INITIAL_PART_DB_SQL_FILE = 'part.sql'      // имя файла с инструкциями для создания part db
-    private readonly PART_SIZE_LIMIT_kB = 100 * 1024   // значение, при привышении которого данная part db больше не используется
+    private readonly PART_SIZE_LIMIT_kB = 500 * 1024   // значение, при привышении которого данная part db больше не используется
 
     constructor() {
         this._connMaster = this.getConnectionMaster()
@@ -66,6 +66,7 @@ class ManagerDb {
                                 { encoding: 'utf8' }
                             )
                             conn.exec(sqlInstructions)
+                            conn.exec('DROP INDEX IF EXISTS idx_items')
                             done(null, conn)
                         } catch (err) {
                             console.error('Ошибка при подключении к part db: ', (err as Error).message)
@@ -79,10 +80,9 @@ class ManagerDb {
         return [idPart, this._connPartMap.get(idPart)!] as const
     }
 
-    /** Получить id partDb для записи */
+    /** Вернет id partDb для записи */
     private async getPartId() {
         const partsSize = await this.getPartsSize()
-        console.debug(partsSize)
         // выбираем только partId, которые удоветворяют лимиту по размеру
         const partsForUsing = partsSize
             .filter(part => part.sizeKb < this.PART_SIZE_LIMIT_kB)
@@ -93,7 +93,7 @@ class ManagerDb {
         }
     }
 
-    /** Получить размеры данных, записанные в каждой part базе, отсортированные от меньшего к большему*/
+    /** Вернет размеры данных, записанные в каждой part базе, отсортированные от меньшего к большему*/
     private async getPartsSize() {
         const partsSize = await this._connMaster<FileDb>('files')
             .select('partId', 'sizeKb')
@@ -110,13 +110,24 @@ class ManagerDb {
         return res[0]['id']
     }
 
+    /** Создаст индекс над значениями items */
+    async makeIndexPartDb(connectPartDb: Knex) {
+        return connectPartDb.schema.raw("CREATE INDEX IF NOT EXISTS idx_items ON items(value)")
+    }
+
+    /** Закрвыает все соединения */
     async closeAllConnect() {
-        return Promise.all(
+        console.log('Выполнение построения индексов...')
+        const partsConnections = [...this._connPartMap.values()]
+        await Promise.all(partsConnections.map(conn => this.makeIndexPartDb(conn))) 
+        console.log('Закрытие соединений...')
+        await Promise.all(
             [
                 this._connMaster.destroy(),
-                ...[...this._connPartMap.values()].map(conn => conn.destroy)        
+                ...partsConnections.map(conn => conn.destroy)        
             ]
         )
+        console.log('Соединения закрыты')
     }
 }
 

@@ -12,7 +12,7 @@ import { managerDb } from "./database/sqlite/managerDb"
 
 
 async function main() {
-    const fileName = resolve(__dirname, "D:/udata/rus/2berega.csv")
+    const fileName = resolve(__dirname, "D:/udata/rus/rt_smarthome.csv")
     const hg = new HandlerGroup(new Handler('phone', /\d{11}/g))
     const writer = await getFactoryFileWriter(StoreType.Sqlite)(fileName)
     

@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS text_boxs (
     fileId     INTEGER NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS [values] (
+CREATE TABLE IF NOT EXISTS items (
     value     TEXT    NOT NULL,
     textBoxId INTEGER REFERENCES text_boxs (id) ON DELETE CASCADE
                       NOT NULL,
