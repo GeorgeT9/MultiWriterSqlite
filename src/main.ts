@@ -7,12 +7,12 @@ import { pipeline } from "node:stream/promises"
 import { HandlerGroup } from "./handlers/handlerGroup"
 import { Handler } from "./handlers/handler"
 import { StoreType } from "./database/fileWriter"
-import { managerDb } from "./database/sqlite/managerDb"
+import { managerConnectsDb } from "./database/sqlite/managerConnectsDb"
 
 
 
 async function main() {
-    const fileName = resolve(__dirname, "D:/udata/rus/rt_smarthome.csv")
+    const fileName = resolve(__dirname, "D:/udata/rus/beeline.csv")
     const hg = new HandlerGroup(new Handler('phone', /\d{11}/g))
     const writer = await getFactoryFileWriter(StoreType.Sqlite)(fileName)
     
@@ -31,11 +31,11 @@ main()
         console.error(err)
     })
     .finally(() => {
-        managerDb.closeAllConnect()
+        managerConnectsDb.closeAllConnect()
     })
 
 process.once('uncaughtExceptionMonitor', (err) => {
     console.error('uncaughtException!!!!')
-    managerDb.closeAllConnect()
+    managerConnectsDb.closeAllConnect()
 })
 

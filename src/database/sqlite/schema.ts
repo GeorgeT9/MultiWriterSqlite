@@ -23,7 +23,8 @@ export interface FileDb {
     fileName: string,
     mTimeMs: number,
     sizeKb: number,
-    partId: number
+    partId: number,
+    checkTimeMs: number
 }
 
 export interface PartDb {

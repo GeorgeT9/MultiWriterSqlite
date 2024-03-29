@@ -11,7 +11,10 @@ CREATE TABLE IF NOT EXISTS files (
     mTimeMs  NUMERIC NOT NULL,
     sizeKb   INTEGER NOT NULL,
     partId   INTEGER NOT NULL
-                     REFERENCES parts (id) ON DELETE CASCADE
+                     REFERENCES parts (id) ON DELETE CASCADE,
+    checkTimeMs NUMERIC NOT NULL
 )
 
-INSERT INTO parts VALUES (0)
+
+create index if not exists idx_files
+on files (fileName);

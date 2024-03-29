@@ -5,22 +5,30 @@ import { Knex, knex } from "knex"
 import { Database } from "better-sqlite3"
 import { readFileSync } from "node:fs"
 import { PartDb } from "./schema"
+import fs from "node:fs/promises"
 
 
-
-
-class ManagerDb {
+/**
+ * Предоставляет соединения с базами данных sqlite,
+ * организацию партирования и индексации
+ */
+class ManagerConnectsDb {
 
     private readonly _connMaster: Knex                          // соединенение с мастер базой
     private readonly _connPartMap: Map<number, Knex>            // мапа соединений с part базами, которые используются в данный момент
     private readonly MASTER_DB_NAME = 'master.db'               // имя мастер базы данных
     private readonly PART_DB_PREFIX_NAME = 'part'               // префикс имени баз данных part
     private readonly INITIAL_PART_DB_SQL_FILE = 'part.sql'      // имя файла с инструкциями для создания part db
-    private readonly PART_SIZE_LIMIT_kB = 500 * 1024   // значение, при привышении которого данная part db больше не используется
+    private readonly PART_SIZE_LIMIT_kB = 1 * 1024 * 1024       // значение, при привышении которого данная part db больше не используется
 
     constructor() {
         this._connMaster = this.getConnectionMaster()
         this._connPartMap = new Map()
+    }
+
+    /** Генерация имени файла partDb  */
+    makeNamePartDb(partId: number) {
+        return `${this.PART_DB_PREFIX_NAME}_${partId}.db`
     }
 
     /** создание подключения к мастер базе */
@@ -44,7 +52,6 @@ class ManagerDb {
             useNullAsDefault: true,
             acquireConnectionTimeout: 5000
         })
-
     }
     
     /** Получить (при необходимость создать новое) подключение к partDb. Вернет номер подключения и само подслючение */
@@ -54,7 +61,7 @@ class ManagerDb {
             const conn = knex({
                 client: 'better-sqlite3',
                 connection: {
-                    filename: resolve(cfg.storeDir, `${this.PART_DB_PREFIX_NAME}_${idPart}.db`),
+                    filename: resolve(cfg.storeDir, this.makeNamePartDb(idPart)),
                 },
                 useNullAsDefault: true,
                 pool: {
@@ -78,6 +85,29 @@ class ManagerDb {
             this._connPartMap.set(idPart, conn)
         }
         return [idPart, this._connPartMap.get(idPart)!] as const
+    }
+
+    /** Вернет соединение с partDb по его id;
+     *  если файла partDb не существует, то выбрасит ошибку  
+    */
+    async getPartConnectionById(partId: number) {
+        const partName = this.makeNamePartDb(partId)
+        try {
+            await fs.access(resolve(cfg.storeDir, partName), fs.constants.W_OK)
+        } catch (err) {
+            throw new Error(`Файла partDb ${this.makeNamePartDb(partId)} не существует`)
+        }
+        if (!this._connPartMap.has(partId)) {
+            const conn = knex({
+                client: 'better-sqlite3',
+                connection: {
+                    filename: resolve(cfg.storeDir, partName)
+                },
+                useNullAsDefault: true,
+            }) 
+            this._connPartMap.set(partId, conn)
+        }
+        return this._connPartMap.get(partId)!
     }
 
     /** Вернет id partDb для записи */
@@ -111,15 +141,21 @@ class ManagerDb {
     }
 
     /** Создаст индекс над значениями items */
-    async makeIndexPartDb(connectPartDb: Knex) {
-        return connectPartDb.schema.raw("CREATE INDEX IF NOT EXISTS idx_items ON items(value)")
+    private async makeIndexPartDb(connectPartDb: Knex) {
+        return new Promise((resolve, reject) => {
+            connectPartDb.schema.raw("CREATE INDEX IF NOT EXISTS idx_items ON items(value)")
+                .then(resolve)
+                .catch(err => reject(err))
+        })
     }
 
-    /** Закрвыает все соединения */
+    /** Закрывает все соединения, выполняет индексацию */
     async closeAllConnect() {
         console.log('Выполнение построения индексов...')
+        console.time('index')
         const partsConnections = [...this._connPartMap.values()]
         await Promise.all(partsConnections.map(conn => this.makeIndexPartDb(conn))) 
+        console.timeEnd('index')
         console.log('Закрытие соединений...')
         await Promise.all(
             [
@@ -129,9 +165,10 @@ class ManagerDb {
         )
         console.log('Соединения закрыты')
     }
+
 }
 
 
 
-export const managerDb = new ManagerDb()
+export const managerConnectsDb = new ManagerConnectsDb()
 

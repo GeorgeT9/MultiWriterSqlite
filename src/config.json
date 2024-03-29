@@ -1,3 +1,4 @@
 {
-    "storeDir": ".\\store"
+    "storeDir": ".\\store",
+    "limitPartKb": 1000000
 }
