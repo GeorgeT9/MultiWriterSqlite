@@ -1,4 +1,3 @@
-import cfg from "../../config.json"
 import { FileDb } from "./schema"
 import { resolve } from "node:path"
 import { Knex, knex } from "knex"
@@ -12,16 +11,19 @@ import fs from "node:fs/promises"
  * Предоставляет соединения с базами данных sqlite,
  * организацию партирования и индексации
  */
-class ManagerConnectsDb {
+export class ManagerConnectsDb {
 
+    private readonly _storeDir: string                          // директория нахождения баз данных
+    private readonly _limitPartKb: number                       // лимит для размера partDb
     private readonly _connMaster: Knex                          // соединенение с мастер базой
     private readonly _connPartMap: Map<number, Knex>            // мапа соединений с part базами, которые используются в данный момент
     private readonly MASTER_DB_NAME = 'master.db'               // имя мастер базы данных
     private readonly PART_DB_PREFIX_NAME = 'part'               // префикс имени баз данных part
     private readonly INITIAL_PART_DB_SQL_FILE = 'part.sql'      // имя файла с инструкциями для создания part db
-    private readonly PART_SIZE_LIMIT_kB = 1 * 1024 * 1024       // значение, при привышении которого данная part db больше не используется
 
-    constructor() {
+    constructor(storeDir: string, limitPartKb: number) {
+        this._storeDir = storeDir
+        this._limitPartKb = limitPartKb
         this._connMaster = this.getConnectionMaster()
         this._connPartMap = new Map()
     }
@@ -36,7 +38,7 @@ class ManagerConnectsDb {
         return knex({
             client: 'better-sqlite3',
             connection: {
-                filename: resolve(cfg.storeDir, this.MASTER_DB_NAME),
+                filename: resolve(this._storeDir, this.MASTER_DB_NAME),
             },
             pool: {
                 afterCreate: (conn: Database, done: (err: Error | null, conn: Database) => void) => {
@@ -61,7 +63,7 @@ class ManagerConnectsDb {
             const conn = knex({
                 client: 'better-sqlite3',
                 connection: {
-                    filename: resolve(cfg.storeDir, this.makeNamePartDb(idPart)),
+                    filename: resolve(this._storeDir, this.makeNamePartDb(idPart)),
                 },
                 useNullAsDefault: true,
                 pool: {
@@ -69,7 +71,7 @@ class ManagerConnectsDb {
                         try {
                             conn.pragma('foreign_keys=1')
                             const sqlInstructions = readFileSync(
-                                resolve(cfg.storeDir, this.INITIAL_PART_DB_SQL_FILE),
+                                resolve(this._storeDir, this.INITIAL_PART_DB_SQL_FILE),
                                 { encoding: 'utf8' }
                             )
                             conn.exec(sqlInstructions)
@@ -93,7 +95,7 @@ class ManagerConnectsDb {
     async getPartConnectionById(partId: number) {
         const partName = this.makeNamePartDb(partId)
         try {
-            await fs.access(resolve(cfg.storeDir, partName), fs.constants.W_OK)
+            await fs.access(resolve(this._storeDir, partName), fs.constants.W_OK)
         } catch (err) {
             throw new Error(`Файла partDb ${this.makeNamePartDb(partId)} не существует`)
         }
@@ -101,7 +103,7 @@ class ManagerConnectsDb {
             const conn = knex({
                 client: 'better-sqlite3',
                 connection: {
-                    filename: resolve(cfg.storeDir, partName)
+                    filename: resolve(this._storeDir, partName)
                 },
                 useNullAsDefault: true,
             }) 
@@ -115,7 +117,7 @@ class ManagerConnectsDb {
         const partsSize = await this.getPartsSize()
         // выбираем только partId, которые удоветворяют лимиту по размеру
         const partsForUsing = partsSize
-            .filter(part => part.sizeKb < this.PART_SIZE_LIMIT_kB)
+            .filter(part => part.sizeKb < this._limitPartKb)
         if (partsForUsing.length > 0) {
             return partsForUsing[0]['partId']
         } else {
@@ -179,5 +181,4 @@ class ManagerConnectsDb {
 
 
 
-export const managerConnectsDb = new ManagerConnectsDb()
 

@@ -1,9 +1,9 @@
+import { ManagerConnectsDb } from "./database/sqlite/managerConnectsDb"
 import { Writable } from "node:stream"
-import { managerConnectsDb } from "./database/sqlite/managerConnectsDb"
 import { FileDb, ItemDb, TextBoxDb } from "./database/sqlite/schema"
 import { TextBox } from "./handlers/handlers.types"
 import { EOL } from "node:os"
-
+import { Knex } from "knex"
 
 
 export type FileInfo = {
@@ -13,7 +13,7 @@ export type FileInfo = {
 }
 
 
-const enum Command {
+export const enum Command {
     Inser = 'Insert',
     Update = 'Update',
     None = 'None'
@@ -21,10 +21,15 @@ const enum Command {
 
 
 
-class Commander {
+export class Commander {
 
-    _managerConnects = managerConnectsDb
-    _connMaster = this._managerConnects.getConnectionMaster()
+    _managerConnects: ManagerConnectsDb
+    _connMaster: Knex 
+
+    constructor(storeDir: string, limitPartDb: number) {
+        this._managerConnects = new ManagerConnectsDb(storeDir, limitPartDb)
+        this._connMaster = this._managerConnects.getConnectionMaster()
+    }
 
     // действия, необходимые выполнить для существующего в директории файла
     async exploreExistFile(fileInfo: FileInfo): Promise<Command> {
@@ -115,6 +120,20 @@ class Commander {
         masterTrx.commit()
         partTrx.commit()
         return
+    }
+
+    /** Удалит информацию о файле из БД по его имени */
+    async deleteFile(fileName: string) {
+        const res = await this._connMaster<FileDb & {id: number}>('files')
+            .where({
+                fileName
+            })
+            .returning('id')
+        const fileId = res[0]?.id
+        if (fileId == undefined) {
+            throw new Error("Попытка удалить несущкствующий файл " + fileName)
+        }
+        return this.clearFile(fileId)
     }
 
     /**
@@ -219,6 +238,8 @@ class Commander {
             })
     }
 
-
+    /** Закрыть все соединения, перед этим выполнив индексацию и вакуум */
+    async closeAllConnections() {
+        return this._managerConnects.closeAllConnect()
+    }
 }
-
