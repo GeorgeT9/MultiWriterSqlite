@@ -150,12 +150,21 @@ class ManagerConnectsDb {
     }
 
     /** Закрывает все соединения, выполняет индексацию */
-    async closeAllConnect() {
+    async closeAllConnect(vacuum: boolean = false) {
         console.log('Выполнение построения индексов...')
         console.time('index')
         const partsConnections = [...this._connPartMap.values()]
         await Promise.all(partsConnections.map(conn => this.makeIndexPartDb(conn))) 
         console.timeEnd('index')
+        if (vacuum) {
+            console.log('Выполнение vacuum ...')
+            console.time('vacuum')
+            Promise.all([
+                this._connMaster.fromRaw('VACUUM'),
+                ...partsConnections.map(conn => conn.fromRaw('VACUUM'))
+            ])
+            console.timeEnd('vacuum')
+        }
         console.log('Закрытие соединений...')
         await Promise.all(
             [

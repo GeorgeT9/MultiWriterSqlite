@@ -1,4 +1,3 @@
-import { pipeline } from "node:stream/promises"
 import { Writable } from "node:stream"
 import { genFileNamesFromDir } from "./dirReader"
 import { resolve } from "node:path"
