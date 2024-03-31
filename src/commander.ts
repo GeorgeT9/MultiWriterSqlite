@@ -2,6 +2,8 @@ import { Writable } from "node:stream"
 import { managerConnectsDb } from "./database/sqlite/managerConnectsDb"
 import { FileDb, ItemDb, TextBoxDb } from "./database/sqlite/schema"
 import { TextBox } from "./handlers/handlers.types"
+import { EOL } from "node:os"
+
 
 
 export type FileInfo = {
@@ -56,6 +58,37 @@ class Commander {
         return res.length ? res[0] : null
     }
 
+    /**
+     * Очистка БД от файлов, которые были удалены из файловой системы;
+     * @param lastCheckTime время последней проверки БД в мс
+     */
+    async clearDbOfDeletedFiles(lastCheckTime: number) {
+        const tasksClear = []
+        for await (const file of await this.getFilesFromDelete(lastCheckTime)) {
+            tasksClear.push(this.clearFile(file.id))
+        }
+        const res = await Promise.allSettled(tasksClear)
+        const errorMessages: string[] = []
+        for (const resCleared of res) {
+            if (resCleared.status == 'rejected') {
+                errorMessages.push((resCleared.reason() as Error).message)
+            }
+        }
+        if (errorMessages.length > 0) {
+            console.error(errorMessages.join(EOL))
+        }
+    }
+
+    /**
+     * Получить асинхронный итератор для обхода файлов в БД,
+     * по которым не выполнялась проверка после времени lastCheckTime 
+     */
+    private async getFilesFromDelete(lastCheckTime: number) {
+        return this._connMaster<FileDb & { id: number }>('files')
+            .where('checkTimeMs', '<', lastCheckTime)
+            .stream()
+    }
+
     /** Удаление из БД информации о файле id;
      *  параметр id файла подразумевает, что данный файл существует в БД
      */
@@ -82,14 +115,6 @@ class Commander {
         masterTrx.commit()
         partTrx.commit()
         return
-    }
-
-    /**
-     */
-    private async getFilesFromDelete(lastCheckTime: number) {
-        return this._connMaster<FileDb & { id: number }>('files')
-            .where('checkTimeMs', '<', lastCheckTime)
-            .stream()
     }
 
     /**
