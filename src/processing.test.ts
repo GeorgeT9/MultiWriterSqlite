@@ -21,8 +21,8 @@ describe('general test for processing chain streams', () => {
     let out: TextBox[] = []
 
     it('shoud correct process files', async () => {
-        for await (const fileName of genFileNamesFromDir(dirName, 0, ['.txt', '.doc'])) {
-            const textExtractor = getTextExtractorFromFile(fileName)
+        for await (const fileInfo of genFileNamesFromDir(dirName, 0, ['.txt', '.doc'])) {
+            const textExtractor = getTextExtractorFromFile(fileInfo.fileName)
             const liner = new LinerStream()
             const handler = new HandlerTransformerStream(hg)
             const writer = new Writable({

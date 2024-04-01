@@ -71,7 +71,7 @@ export class ManagerConnectsDb {
                         try {
                             conn.pragma('foreign_keys=1')
                             const sqlInstructions = readFileSync(
-                                resolve(this._storeDir, this.INITIAL_PART_DB_SQL_FILE),
+                                resolve(__dirname, this.INITIAL_PART_DB_SQL_FILE),
                                 { encoding: 'utf8' }
                             )
                             conn.exec(sqlInstructions)
@@ -143,7 +143,7 @@ export class ManagerConnectsDb {
     }
 
     /** Создаст индекс над значениями items */
-    private async makeIndexPartDb(connectPartDb: Knex) {
+    private async makeIndexItemsPartDb(connectPartDb: Knex) {
         return new Promise((resolve, reject) => {
             connectPartDb.schema.raw("CREATE INDEX IF NOT EXISTS idx_items ON items(value)")
                 .then(resolve)
@@ -152,29 +152,12 @@ export class ManagerConnectsDb {
     }
 
     /** Закрывает все соединения, выполняет индексацию */
-    async closeAllConnect(vacuum: boolean = false) {
+    async closeAllConnect() {
         console.log('Выполнение построения индексов...')
         console.time('index')
         const partsConnections = [...this._connPartMap.values()]
-        await Promise.all(partsConnections.map(conn => this.makeIndexPartDb(conn))) 
+        await Promise.all(partsConnections.map(conn => this.makeIndexItemsPartDb(conn))) 
         console.timeEnd('index')
-        if (vacuum) {
-            console.log('Выполнение vacuum ...')
-            console.time('vacuum')
-            Promise.all([
-                this._connMaster.fromRaw('VACUUM'),
-                ...partsConnections.map(conn => conn.fromRaw('VACUUM'))
-            ])
-            console.timeEnd('vacuum')
-        }
-        console.log('Закрытие соединений...')
-        await Promise.all(
-            [
-                this._connMaster.destroy(),
-                ...partsConnections.map(conn => conn.destroy)        
-            ]
-        )
-        console.log('Соединения закрыты')
     }
 
 }

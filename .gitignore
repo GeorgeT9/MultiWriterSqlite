@@ -3,3 +3,4 @@
 /.vscode
 /store
 jest.config.js
+/data

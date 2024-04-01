@@ -54,13 +54,13 @@ export class Commander {
     private async getInfoFileFromDb(fileName: string) {
         const res = await this._connMaster<FileDb>('files')
             .update({
-                mTimeMs: Date.now()
+                checkTimeMs: Date.now()
             }, '*')
             .where({
                 fileName
             })
             .onConflict().ignore()
-        return res.length ? res[0] : null
+        return res.length > 0 ? res[0] : null
     }
 
     /**
@@ -76,7 +76,7 @@ export class Commander {
         const errorMessages: string[] = []
         for (const resCleared of res) {
             if (resCleared.status == 'rejected') {
-                errorMessages.push((resCleared.reason() as Error).message)
+                errorMessages.push((resCleared.reason as Error).message)
             }
         }
         if (errorMessages.length > 0) {
@@ -99,14 +99,20 @@ export class Commander {
      */
     private async clearFile(fileId: number) {
         const masterTrx = await this._connMaster.transaction()
-        const { partId } = (await masterTrx<FileDb & {id: number}>('files')
-            .del('partId')
+        const partId = (await masterTrx<FileDb & {id: number}>('files')
+            .select('partId')
             .where({
                 id: fileId
-            }))[0]
+            })
+            )[0].partId
         const connPartDb = await this._managerConnects.getPartConnectionById(partId)
         const partTrx = await connPartDb.transaction()
         try {
+            await masterTrx<FileDb & {id: number}>('files')
+            .del()
+            .where({
+                id: fileId
+            })
             await partTrx<TextBoxDb>('text_boxs')
                 .del()
                 .where({
@@ -131,7 +137,7 @@ export class Commander {
             .returning('id')
         const fileId = res[0]?.id
         if (fileId == undefined) {
-            throw new Error("Попытка удалить несущкствующий файл " + fileName)
+            throw new Error("Попытка удалить несуществующий файл " + fileName)
         }
         return this.clearFile(fileId)
     }
@@ -151,7 +157,6 @@ export class Commander {
                 partId,
                 checkTimeMs: Date.now()
             }, 'id'))[0].id
-        console.log(fileInfo.fileName)
 
 
         class SqliteWriter extends Writable {
