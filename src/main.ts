@@ -22,7 +22,7 @@ async function main() {
             if (command !== Command.None) {
                 if (command === Command.Update) {
                     // если файл изменился, то сначала стираем о нем всю информацию
-                    await commander.deleteFile(fileInfo.fileName)
+                    await commander.deleteFileByName(fileInfo.fileName)
                 }
                 // обрабатываем и записываем файл потоком 
                 await pipeline(

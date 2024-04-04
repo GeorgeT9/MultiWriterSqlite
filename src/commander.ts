@@ -70,6 +70,7 @@ export class Commander {
     async clearDbOfDeletedFiles(lastCheckTime: number) {
         const tasksClear = []
         for await (const file of await this.getFilesFromDelete(lastCheckTime)) {
+            console.log(`${file.fileName} - del`)
             tasksClear.push(this.clearFile(file.id))
         }
         const res = await Promise.allSettled(tasksClear)
@@ -129,7 +130,7 @@ export class Commander {
     }
 
     /** Удалит информацию о файле из БД по его имени */
-    async deleteFile(fileName: string) {
+    async deleteFileByName(fileName: string) {
         const res = await this._connMaster<FileDb & {id: number}>('files')
             .where({
                 fileName
