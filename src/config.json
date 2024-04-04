@@ -1,5 +1,5 @@
 {
     "watchDir": "..\\data",
     "storeDir": "..\\store",
-    "limitPartKb": 1000000
+    "limitPartKb": 500000
 }

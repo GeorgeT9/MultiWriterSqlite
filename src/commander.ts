@@ -109,15 +109,15 @@ export class Commander {
         const partTrx = await connPartDb.transaction()
         try {
             await masterTrx<FileDb & {id: number}>('files')
-            .del()
-            .where({
-                id: fileId
-            })
-            await partTrx<TextBoxDb>('text_boxs')
+                .where({
+                    id: fileId
+                })
                 .del()
+            await partTrx<TextBoxDb>('text_boxs')
                 .where({
                     fileId 
                 })
+                .del()
         } catch (err) {
             masterTrx.rollback()
             partTrx.rollback()

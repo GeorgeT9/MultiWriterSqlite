@@ -23,3 +23,5 @@ CREATE TRIGGER IF NOT EXISTS text_boxs_delete AFTER DELETE ON text_boxs
 BEGIN
   INSERT INTO fts(fts, rowid, text) VALUES('delete', old.id, old.text);
 END;
+
+CREATE INDEX IF NOT EXISTS idx_fileId ON text_boxs(fileId);
