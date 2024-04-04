@@ -127,11 +127,11 @@ export class ManagerConnectsDb {
 
     /** Вернет размеры данных, записанные в каждой part базе, отсортированные от меньшего к большему*/
     private async getPartsSize() {
-        const partsSize = await this._connMaster<FileDb>('files')
-            .select('partId', 'sizeKb')
-            .sum('sizeKb', { as: 'sizeKb' })
-            .groupBy('partId')
-            .orderBy('sizeKb', 'asc')
+        const partsSize = await this._connMaster<PartDb>('parts')
+            .leftJoin('files', 'parts.id', 'files.partId')
+            .groupBy('parts.id')
+            .orderBy('sizeKb', 'asc')           
+            .select(this._connMaster.raw('parts.id as partId, coalesce(sum(files.sizeKb), 0) as sizeKb'))
         return partsSize
     }
 
