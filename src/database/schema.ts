@@ -2,23 +2,23 @@
 
 export interface FileDb {
     id: number,
-    fileName: string,
-    mTimeMs: number,
-    sizeKb: number,
-    partId: number,
-    checkTimeMs: number
+    file_name: string,
+    time_modified: number,
+    size_kb: number,
+    time_last_check: number
 }
 
 export interface TextBoxDb {
     id: number,
     text: string,
-    numberLine: number,
-    fileId: number
+    number_block: number,
+    file_id: number
 }    
 
 export interface ItemDb {
     value: string,
-    textBoxId: number,
-    position: [number, number]
+    text_box_id: number,
+    start: number,
+    end: number
 }    
 

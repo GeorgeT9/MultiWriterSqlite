@@ -8,8 +8,9 @@ describe("PartConnect test", () => {
 
     const testPartId = 100000
 
-    it("should create file db", () => {
+    it("should create file db", async () => {
         const partConn = new PartConnect(testPartId)
+        const res = await partConn.getFileByName("");
         console.log("part_db file: " + partConn.fullFileName)
         expect(partConn.partId).toBe(testPartId)
         expect(existsPartDb(partConn)).toBeTruthy()

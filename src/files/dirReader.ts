@@ -1,7 +1,14 @@
 import { opendir, stat } from "node:fs/promises"
 import { extname, resolve } from "node:path"
-import { FileInfo } from "../commander"
+import { } from "../database/schema"
 
+
+
+type FileInfo = {
+    fileName: string,
+    mTimeMs: number,
+    sizeKb: number
+}
 
 /**
  * Создает итератор, который обходит все файлы из директории path и

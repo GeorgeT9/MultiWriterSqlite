@@ -4,6 +4,7 @@ import path from "node:path";
 import { readFile } from "node:fs/promises"
 import fs from "node:fs"
 import cfg from "../config"
+import { FileDb } from "./schema";
 
 
 export class PartConnect {
@@ -17,26 +18,28 @@ export class PartConnect {
 
     constructor(partId: number) {
         this._partId = partId
-        this._conn = this.makeConnection(partId)
+        this._conn = this.makeConnection()
     }
 
     // создает подключение в зависимости от того уже существует part_db или нет
-    private makeConnection(partId: number) {
+    private makeConnection() {
         let partDbExists = this.isFilePartDbExist()
         // объект конфигурации соединения
         let config: Knex.Config["pool"] = {
-                afterCreate: async (conn: Database, done: Function) => {
+                afterCreate: (conn: Database, done: Function) => {
                     try {
                         if (!partDbExists) {
+                            console.debug("cоздание новой part_db")
                             // создание структуры для несуществующих part_db
                             conn.exec(this._sqlInit)
                         } else {
+                            console.debug("подключение к существующей part_db")
                             // удаление индекса для существующей part_db
                             conn.exec("DROP INDEX IF EXISTS index_item")
                         }
                         conn.pragma("foreign_keys = 1")
-                        conn.pragma("pragma cache_size = -10000")
-                        conn.pragma("pragma locking_mode = EXCLUSIVE")
+                        conn.pragma("cache_size = -10000")
+                        conn.pragma("locking_mode = EXCLUSIVE")
                         done(null, conn)
                     } catch (err) {
                         done(err as Error, null)
@@ -50,7 +53,8 @@ export class PartConnect {
             connection: {
                 filename: this.fullFileName,
             },
-            pool: config
+            pool: config,
+            useNullAsDefault: true
         })
     }
 
@@ -69,5 +73,13 @@ export class PartConnect {
 
     get fullFileName() {
         return path.resolve(this._storeDir, `part_${this._partId}.db`)
+    }
+
+    /** запрос информации о файле по его имени */
+    async getFileByName(fileName: string) {
+        return this._conn<FileDb>('files')
+            .where({
+                file_name: fileName
+            })
     }
 }
