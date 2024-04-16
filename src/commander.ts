@@ -70,7 +70,6 @@ export class Commander {
     async clearDbOfDeletedFiles(lastCheckTime: number) {
         const tasksClear = []
         for await (const file of await this.getFilesFromDelete(lastCheckTime)) {
-            console.log(`${file.fileName} - del`)
             tasksClear.push(this.clearFile(file.id))
         }
         const res = await Promise.allSettled(tasksClear)
@@ -238,9 +237,6 @@ export class Commander {
                 masterTrx.rollback()
                 partTrx.rollback()
                 console.error(`${fileInfo.fileName} - error : ${err.message}`)
-            })
-            .once('finish', () => {
-                console.log(fileInfo.fileName + ' - ok')
             })
     }
 

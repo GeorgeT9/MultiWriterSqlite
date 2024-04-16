@@ -33,6 +33,22 @@ export class ManagerConnectsDb {
         return `${this.PART_DB_PREFIX_NAME}_${partId}.db`
     }
 
+    // применить настроечные прагмы к подключению
+    private applyPragmas(conn: Database) {
+        const pragmas = [
+            "pragma foreign_keys = 1;",
+            "pragma synchronous = 0;",
+            "pragma journal_mode = WAL;",
+            "pragma cache_size = -10000;",
+            "pragma locking_mode = EXCLUSIVE;"
+        ]
+        for (const pragma of pragmas) {
+            const res = conn.pragma(pragma)
+            console.log('pragma ' + pragma + ' return: ' + res)
+        }
+        return conn
+    }
+
     /** создание подключения к мастер базе */
     getConnectionMaster() {
         return knex({
@@ -43,7 +59,7 @@ export class ManagerConnectsDb {
             pool: {
                 afterCreate: (conn: Database, done: (err: Error | null, conn: Database) => void) => {
                     try {
-                        conn.pragma('foreign_keys=1')
+                        this.applyPragmas(conn)
                         done(null, conn)
                     } catch (err) {
                         console.error('Ошибка при подключении к master db: ', (err as Error).message)
@@ -69,12 +85,12 @@ export class ManagerConnectsDb {
                 pool: {
                     afterCreate: (conn: Database, done: (err: Error | null, conn: Database) => void) => {
                         try {
-                            conn.pragma('foreign_keys=1')
                             const sqlInstructions = readFileSync(
                                 resolve(__dirname, this.INITIAL_PART_DB_SQL_FILE),
                                 { encoding: 'utf8' }
                             )
                             conn.exec(sqlInstructions)
+                            this.applyPragmas(conn)
                             conn.exec('DROP INDEX IF EXISTS idx_items')
                             done(null, conn)
                         } catch (err) {
@@ -104,6 +120,17 @@ export class ManagerConnectsDb {
                 client: 'better-sqlite3',
                 connection: {
                     filename: resolve(this._storeDir, partName)
+                },
+                pool: {
+                    afterCreate: (conn: Database, done: (err: Error | null, conn: Database) => void) => {
+                        try {
+                            this.applyPragmas(conn)
+                            done(null, conn)
+                        } catch (err) {
+                            console.error('Ошибка при подключении к part db: ', (err as Error).message)
+                            done(err as Error, conn)
+                        }
+                    }
                 },
                 useNullAsDefault: true,
             }) 
@@ -153,11 +180,8 @@ export class ManagerConnectsDb {
 
     /** Закрывает все соединения, выполняет индексацию */
     async closeAllConnect() {
-        console.log('Выполнение построения индексов...')
-        console.time('index')
         const partsConnections = [...this._connPartMap.values()]
         await Promise.all(partsConnections.map(conn => this.makeIndexItemsPartDb(conn))) 
-        console.timeEnd('index')
     }
 
 }
