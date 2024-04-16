@@ -1,7 +1,5 @@
 import { opendir, stat } from "node:fs/promises"
-import { extname, resolve } from "node:path"
-import { } from "../database/schema"
-
+import { extname, resolve, relative } from "node:path"
 
 
 type FileInfo = {
@@ -13,7 +11,8 @@ type FileInfo = {
 /**
  * Создает итератор, который обходит все файлы из директории path и
  * возвращает FileInfo, чье время модификации больше afterMTimeMs и 
- * расширение принадлежит списку onlyThisExts
+ * расширение принадлежит списку onlyThisExts;
+ * fileName содержит путь относительно параметра path
  */
 export async function* genFileNamesFromDir(path: string, afterMTimeMs: number, onlyThisExts: string[] ): AsyncGenerator<FileInfo> {
     const dir = await opendir(path, {recursive: true})
@@ -24,7 +23,7 @@ export async function* genFileNamesFromDir(path: string, afterMTimeMs: number, o
             const { mtimeMs, size } = await stat(fileFullName)
             if (exts.has(extname(f.name)) && mtimeMs > afterMTimeMs) {
                 yield {
-                    fileName: fileFullName,
+                    fileName: relative(path, fileFullName),
                     mTimeMs: mtimeMs,
                     sizeKb: Math.round(size / 1024)
                 }
