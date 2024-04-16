@@ -6,7 +6,7 @@ import fs from "node:fs"
 import cfg from "../config"
 
 
-class PartConnect {
+export class PartConnect {
 
     private readonly _storeDir = cfg.storeDir
     private readonly _watchDir = cfg.watchDir
@@ -22,15 +22,7 @@ class PartConnect {
 
     // создает подключение в зависимости от того уже существует part_db или нет
     private makeConnection(partId: number) {
-        let partDbExists: boolean
-        
-        // проверка наличия part_db
-        try {
-            fs.accessSync(this.fullFileName, fs.constants.F_OK)
-            partDbExists = true
-        } catch (err) {
-            partDbExists = false
-        }
+        let partDbExists = this.isFilePartDbExist()
         // объект конфигурации соединения
         let config: Knex.Config["pool"] = {
                 afterCreate: async (conn: Database, done: Function) => {
@@ -49,7 +41,8 @@ class PartConnect {
                     } catch (err) {
                         done(err as Error, null)
                     }
-                }
+                },
+                
             }
 
         return knex({
@@ -61,10 +54,20 @@ class PartConnect {
         })
     }
 
+    private isFilePartDbExist() {
+        try {
+            fs.accessSync(this.fullFileName, fs.constants.F_OK)
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    get partId() {
+        return this._partId
+    }
 
     get fullFileName() {
         return path.resolve(this._storeDir, `part_${this._partId}.db`)
     }
-
-
 }

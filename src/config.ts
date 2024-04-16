@@ -1,9 +1,9 @@
 import cfg from './config.json'
 import path from "node:path"
+import fs from "node:fs"
 
 
-
-let { storeDir, watchDir, limitPartKb } = cfg
+let { storeDir, watchDir, limitPartMb } = cfg
 
 if (storeDir == undefined ) {
     console.error('Не задан обязательный конфигурационный параметр storeDir')
@@ -13,20 +13,28 @@ if (watchDir == undefined ) {
     console.error('Не задан обязательный конфигурационный параметр watchDir')
     process.exit(-1)    
 }
-limitPartKb = limitPartKb == undefined || limitPartKb < 100_000 
-    ? 100_000
-    : limitPartKb
+limitPartMb = limitPartMb == undefined || limitPartMb < 100 
+    ? 100
+    : limitPartMb
 
 if (!path.isAbsolute(storeDir)) {
-    storeDir = path.resolve(__dirname, storeDir)
+    storeDir = path.resolve(__dirname, "..", storeDir)
 }
 if (!path.isAbsolute(watchDir)) {
-    watchDir = path.resolve(__dirname, watchDir)
+    watchDir = path.resolve(__dirname, "..", watchDir)
 }
 
+const sqlInitPartDbFilePath = path.resolve(__dirname, "..", "./sql/part.sql")
+let sqlInit = null
+try {
+    sqlInit = fs.readFileSync(sqlInitPartDbFilePath, {encoding: 'utf-8'})
+} catch (err) {
+    throw(new Error("Ошибка чтения инфструкций инициализации part_db: " + (err as Error).message))
+}
 
 export default {
     storeDir,
     watchDir,
-    limitPartKb
+    limitPartMb,
+    sqlInit
 }

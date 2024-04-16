@@ -1,6 +1,6 @@
 import { ManagerConnectsDb } from "./database/sqlite/managerConnectsDb"
 import { Writable } from "node:stream"
-import { FileDb, ItemDb, TextBoxDb } from "./database/sqlite/schema"
+import { FileDb, ItemDb, TextBoxDb } from "./database/schema"
 import { TextBox } from "./handlers/handlers.types"
 import { EOL } from "node:os"
 import { Knex } from "knex"

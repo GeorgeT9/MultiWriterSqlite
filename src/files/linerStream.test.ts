@@ -9,7 +9,7 @@ import { Line } from "../handlers/handlers.types"
 
 describe(('LinerStream'), () => {
     
-    const fileName =  resolve("src/__fixtures__/data/data1.csv")
+    const fileName =  resolve("__fixtures__/data/data1.csv")
     let reader: Readable
     let out: Line[] = []
     let writer: Writable

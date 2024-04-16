@@ -6,7 +6,7 @@ import { wordTextExtractor } from "./wordTextExtractor"
 
 describe('WordTextExtractor', () => {
     
-    const docFile = resolve("./src/__fixtures__/document.doc")  
+    const docFile = resolve("__fixtures__/document.doc")  
 
     let out: string[]
     let writer: Writable

@@ -4,7 +4,7 @@ import { resolve } from "node:path"
 
 describe('dirReaderStream', () => {
 
-    const dir = resolve('./src/__fixtures__') 
+    const dir = resolve('__fixtures__') 
     let out: string[] = []
     let writer: Writable 
 
