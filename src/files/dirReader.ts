@@ -2,7 +2,7 @@ import { opendir, stat } from "node:fs/promises"
 import { extname, resolve, relative } from "node:path"
 
 
-type FileInfo = {
+export type FileInfo = {
     fileName: string,
     mTimeMs: number,
     sizeKb: number
