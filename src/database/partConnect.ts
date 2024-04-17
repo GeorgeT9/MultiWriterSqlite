@@ -19,7 +19,6 @@ export class PartConnect {
 
     private readonly _storeDir = cfg.storeDir
     private readonly _watchDir = cfg.watchDir
-    private readonly _limitSizeMb = cfg.limitPartMb
     private readonly _sqlInit = cfg.sqlInit
     private readonly _partId: number
     private readonly _conn: Knex
