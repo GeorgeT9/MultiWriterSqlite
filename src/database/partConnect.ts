@@ -110,7 +110,7 @@ export class PartConnect {
                 getTextExtractorFromFile(path.resolve(this._watchDir, file_info.fileName)),
                 new LinerStream(),
                 new HandlerTransformerStream(hg),
-                new FilePartWriter(trx, fileId)
+                writer
             )
             trx.commit()
         } catch (err) {
@@ -120,16 +120,23 @@ export class PartConnect {
     }
 
     // вернет сумму размеров файлов записанных в 
-    private async getFilesSizeKb() {
-        const sizeKb = (await (this._conn<FileDb>("files")
-            .sum('size_kb')))[0]
-        return sizeKb
+    async getFilesSizeKb() {
+        const res = (await (this._conn<FileDb>("files")
+            .sum('size_kb', {as: "sum"}))
+        )[0]["sum"]
+        return res
     }
+
+
 }
 
 
 
-/** Writable для записи отдельного файла  */
+/** 
+ * Writable для записи отдельного файла;  
+ * при записи очередной порции данных эмитится событие
+ * writed с передачей в параметре количества записанных объектов
+ * */
 class FilePartWriter extends Writable {
 
     private readonly _conn: Knex
@@ -138,16 +145,18 @@ class FilePartWriter extends Writable {
     constructor(conn: Knex, fileId: number) {
         super({
             objectMode: true,
+            highWaterMark: 5000
         })
         this._conn = conn
         this._fileId = fileId
     }
 
     _writev(chunks: { chunk: TextBox, encoding: BufferEncoding }[], callback: (error?: Error | null | undefined) => void): void {
-        Promise.all(
-            chunks.map(({ chunk: textBox }) => this.writeTextBox(textBox, this._fileId))
-        )
-            .then(_ => callback(null))
+        Promise.all(chunks.map(({ chunk: textBox }) => this.writeTextBox(textBox, this._fileId)))
+            .then(_ => {
+                this.emit("writed", chunks.length)
+                callback(null)
+            })
             .catch(err => callback(err))
     }
 
