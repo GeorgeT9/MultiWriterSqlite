@@ -43,11 +43,13 @@ export class PartConnect {
                     } else {
                         console.debug("подключение к существующей part_db")
                         // удаление индекса для существующей part_db
-                        conn.exec("DROP INDEX IF EXISTS index_item")
+                        conn.exec("DROP INDEX IF EXISTS idx_items")
                     }
                     conn.pragma("foreign_keys = 1")
                     conn.pragma("cache_size = -10000")
                     conn.pragma("locking_mode = EXCLUSIVE")
+                    conn.pragma("journal_mode = PERSIST")
+                    conn.pragma("synchronous = OFF")
                     done(null, conn)
                 } catch (err) {
                     done(err as Error, null)
@@ -127,6 +129,17 @@ export class PartConnect {
         return res
     }
 
+    /** закрытие соединения с part_db с выполнением индексации */
+    async close(vacuum: boolean = false) {
+        // строим индекс над значениями items
+        await this._conn.schema.table("items", t => {
+            t.index('value', "idx_items")
+        })
+        if (vacuum) {
+            await this._conn.raw("VACUUM")
+        }
+        return this._conn.destroy()
+    }
 
 }
 
