@@ -14,17 +14,20 @@ import { LinerStream } from "../files/linerStream"
 import { HandlerTransformerStream } from "../handlers/handlerTransformerStream"
 
 
-
+/**
+ * Класс представляющий соединение с part_db
+ */
 export class PartConnect {
 
     private readonly _storeDir = cfg.storeDir
-    private readonly _watchDir = cfg.watchDir
     private readonly _sqlInit = cfg.sqlInit
+    private readonly _watchDir: string
     private readonly _partId: number
     private readonly _conn: Knex
 
-    constructor(partId: number) {
+    constructor(partId: number, watchDir: string) {
         this._partId = partId
+        this._watchDir = watchDir
         this._conn = this.makeConnection()
     }
 

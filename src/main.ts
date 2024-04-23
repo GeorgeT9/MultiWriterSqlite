@@ -5,16 +5,6 @@ import cfg from "./config"
 
 
 async function main() {
-    const part = new PartConnect(9999)
-    for await (const fileInfo of genFileNamesFromDir(cfg.watchDir, 0, ['.txt', '.doc', '.docx', '.csv'])) {
-        console.time('file')
-        console.log(fileInfo.fileName)
-        await part.processFile(fileInfo, handlersGroup)
-        console.timeEnd('file')
-    }   
-    console.time('close')
-    part.close() 
-    console.timeEnd('close')
 }
 
 
