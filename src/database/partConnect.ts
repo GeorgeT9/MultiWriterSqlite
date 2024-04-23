@@ -4,7 +4,6 @@ import path from "node:path";
 import { Writable } from "node:stream"
 import { pipeline } from "node:stream/promises"
 import fs from "node:fs"
-import cfg from "../config"
 import { FileDb, ItemDb, TextBoxDb } from "./schema";
 import { HandlerGroup } from "../handlers/handlerGroup";
 import { TextBox } from "../handlers/handlers.types"
@@ -19,15 +18,20 @@ import { HandlerTransformerStream } from "../handlers/handlerTransformerStream"
  */
 export class PartConnect {
 
-    private readonly _storeDir = cfg.storeDir
-    private readonly _sqlInit = cfg.sqlInit
-    private readonly _watchDir: string
     private readonly _partId: number
+    private readonly _fullFilePathDb: string
+    private readonly _sqlInitFilePath: string
     private readonly _conn: Knex
 
-    constructor(partId: number, watchDir: string) {
+    /**
+     * @param partId 
+     * @param fullFileDbPath полный путь к файлу part_db 
+     * @param sqlInitFilePath полный путь к файлу инициализации БД
+     */
+    constructor(partId: number, fullFileDbPath: string, sqlInitFilePath: string) {
         this._partId = partId
-        this._watchDir = watchDir
+        this._fullFilePathDb = fullFileDbPath
+        this._sqlInitFilePath = sqlInitFilePath
         this._conn = this.makeConnection()
     }
 
@@ -41,7 +45,7 @@ export class PartConnect {
                     if (!partDbExists) {
                         console.debug("cоздание новой part_db")
                         // создание структуры для несуществующих part_db
-                        conn.exec(this._sqlInit)
+                        conn.exec(this._sqlInitFilePath)
                     } else {
                         console.debug("подключение к существующей part_db")
                         // удаление индекса для существующей part_db
@@ -62,7 +66,7 @@ export class PartConnect {
         return knex({
             client: "better-sqlite3",
             connection: {
-                filename: this.fullFileName,
+                filename: this.fullFileDbName,
             },
             pool: config,
             useNullAsDefault: true
@@ -72,7 +76,7 @@ export class PartConnect {
     // проверка наличия файла part_db
     private isFilePartDbExist() {
         try {
-            fs.accessSync(this.fullFileName, fs.constants.F_OK)
+            fs.accessSync(this.fullFileDbName, fs.constants.F_OK)
             return true
         } catch {
             return false
@@ -85,8 +89,8 @@ export class PartConnect {
     }
 
     /** полное имя файла part_db */
-    get fullFileName() {
-        return path.resolve(this._storeDir, `part_${this._partId}.db`)
+    get fullFileDbName() {
+        return this._fullFilePathDb
     }
 
     /** запрос информации о файле по его имени */
@@ -103,7 +107,7 @@ export class PartConnect {
     }
 
     /** обработать файл и записать полученные данные в part_db */
-    async processFile(file_info: FileInfo, hg: HandlerGroup) {
+    async processFile(watchDir: string, file_info: FileInfo, hg: HandlerGroup) {
         const trx = await this._conn.transaction()
         try {
             // запись информации о файле
@@ -116,7 +120,7 @@ export class PartConnect {
             // pipeline по обработке и запись файла 
             const writer = new FilePartWriter(trx, fileId)
             await pipeline(
-                getTextExtractorFromFile(path.resolve(this._watchDir, file_info.fileName)),
+                getTextExtractorFromFile(path.resolve(watchDir, file_info.fileName)),
                 new LinerStream(),
                 new HandlerTransformerStream(hg),
                 writer
