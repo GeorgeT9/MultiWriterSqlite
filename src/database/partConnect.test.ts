@@ -11,14 +11,14 @@ describe("PartConnect test", () => {
     it("should create file db", async () => {
         const partConn = new PartConnect(testPartId, cfg.watchDir)
         const res = await partConn.getFileByName("");
-        console.log("part_db file: " + partConn.fullFileName)
+        console.log("part_db file: " + partConn.fullFileDbName)
         expect(partConn.partId).toBe(testPartId)
         expect(existsPartDb(partConn)).toBeTruthy()
     })    
 
     function existsPartDb(conn: PartConnect ) {
         try {
-            fs.accessSync(conn.fullFileName, fs.constants.F_OK)
+            fs.accessSync(conn.fullFileDbName, fs.constants.F_OK)
             return true
         } catch {
             return false
