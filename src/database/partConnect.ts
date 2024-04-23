@@ -94,6 +94,11 @@ export class PartConnect {
             })
     }
 
+    /** Запрос информации по всем файлам */
+    async getAllFiles() {
+        return this._conn<FileDb>("files")
+    }
+
     /** обработать файл и записать полученные данные в part_db */
     async processFile(file_info: FileInfo, hg: HandlerGroup) {
         const trx = await this._conn.transaction()
