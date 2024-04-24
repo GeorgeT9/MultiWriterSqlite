@@ -7,44 +7,53 @@ import { WorkerNotification } from "./dispatcher"
 
 
 // данные для инициализации воркера
-export interface IWorkerData {
+export interface WorkerData {
     partId: number,
     watchDir: string,
     fullFilePathDb: string
-    sqlInitFilePath: string
+    sqlInit: string
 }
 
 const { 
     partId, 
     watchDir,
-    sqlInitFilePath,
+    sqlInit,
     fullFilePathDb
-} = workerData as IWorkerData
+} = workerData as WorkerData
 
 
-const partConn = new PartConnect(partId, fullFilePathDb, sqlInitFilePath)
+const partConn = new PartConnect(partId, fullFilePathDb, true,  sqlInit)
 
 // обработка файлов
-parentPort?.on("message", function(fileInfo: FileInfo) {
-    partConn.processFile(watchDir, fileInfo, handlersGroup)
-        .then(() => {
-            parentPort?.postMessage({
-                status: "success",
-                fileInfo,
+parentPort?.on("message", function(msg: FileInfo | null) {
+    if (msg === null) {
+        // данных для обработки больше нет
+        partConn.close(true)
+            .finally(() => parentPort?.postMessage({
+                status: "closed",
                 partId
-            } satisfies WorkerNotification)
-        })
-        .catch(err => {
-            parentPort?.postMessage({
-                status: "failed",
-                errorMessage: (err as Error).message,
-                partId,
-                fileInfo
-            } satisfies WorkerNotification)
-        })
+            } satisfies WorkerNotification))
+    } else {
+        partConn.processFile(watchDir, msg, handlersGroup)
+            .then(() => {
+                parentPort?.postMessage({
+                    status: "success",
+                    fileInfo: msg,
+                    partId
+                } satisfies WorkerNotification)
+            })
+            .catch(err => {
+                parentPort?.postMessage({
+                    status: "failed",
+                    errorMessage: (err as Error).message,
+                    partId,
+                    fileInfo: msg
+                } satisfies WorkerNotification)
+            })
+    }
 })
 
-// при канала воркера выполняется закрытие соединения 
+// при закрытии канала воркера выполняется закрытие соединения 
 parentPort?.on("close", function() {
     partConn.close(true)
 })
