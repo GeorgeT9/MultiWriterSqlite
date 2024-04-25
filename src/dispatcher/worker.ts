@@ -10,7 +10,7 @@ import { WorkerNotification } from "./dispatcher"
 export interface WorkerData {
     partId: number,
     watchDir: string,
-    fullFilePathDb: string
+    storeDir: string
     sqlInit: string
 }
 
@@ -18,22 +18,23 @@ const {
     partId, 
     watchDir,
     sqlInit,
-    fullFilePathDb
+    storeDir
 } = workerData as WorkerData
 
 
-const partConn = new PartConnect(partId, fullFilePathDb, true,  sqlInit)
+const partConn = new PartConnect(partId, storeDir, sqlInit)
 
 // обработка файлов
 parentPort?.on("message", function(msg: FileInfo | null) {
     if (msg === null) {
-        // данных для обработки больше нет
+        // закрытие соединения
         partConn.close(true)
             .finally(() => parentPort?.postMessage({
                 status: "closed",
                 partId
             } satisfies WorkerNotification))
     } else {
+        // обработка файла
         partConn.processFile(watchDir, msg, handlersGroup)
             .then(() => {
                 parentPort?.postMessage({
