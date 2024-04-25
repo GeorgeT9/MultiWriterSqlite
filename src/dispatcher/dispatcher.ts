@@ -2,6 +2,8 @@ import { EventEmitter } from "node:stream";
 import { FileInfo } from "../files/dirReader";
 
 
+/** Тип уведомлений от воркера */
+export type WorkerNotification = SuccessWorkerNotification | FailedWorkerNotification | ClosedConnectNotification
 
 interface SuccessWorkerNotification {
     status: "success",
@@ -21,21 +23,17 @@ interface ClosedConnectNotification {
     partId: number
 }
 
-export type WorkerNotification = SuccessWorkerNotification | FailedWorkerNotification | ClosedConnectNotification
 
 
 
-class Dispatcher extends EventEmitter {
+class Dispatcher {
 
-    private readonly _watchDir: string
     private readonly _storeDir: string
-    private readonly _sqlInitFilePath: string
+    private readonly _sqlInit: string
 
-    constructor(watchDir: string, storeDir: string, sqlInitFilePath: string) {
-        super()
-        this._watchDir = watchDir
+    constructor(watchDir: string, storeDir: string, sqlInit: string) {
         this._storeDir = storeDir
-        this._sqlInitFilePath = sqlInitFilePath
+        this._sqlInit = sqlInit
     }
 
 
