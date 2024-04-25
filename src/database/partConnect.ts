@@ -19,19 +19,19 @@ import { HandlerTransformerStream } from "../handlers/handlerTransformerStream"
 export class PartConnect {
 
     private readonly _partId: number
-    private readonly _fullFilePathDb: string
-    private readonly _sqlInitFilePath: string
+    private readonly _storeDir: string
+    private readonly _sqlInit: string
     private readonly _conn: Knex
 
     /**
      * @param partId 
      * @param fullFileDbPath полный путь к файлу part_db 
-     * @param sqlInitFilePath полный путь к файлу инициализации БД
+     * @param sqlInit инструкции инициализации создаваемых part_db
      */
-    constructor(partId: number, fullFileDbPath: string, sqlInitFilePath: string) {
+    constructor(partId: number, storeDir: string, sqlInit: string) {
         this._partId = partId
-        this._fullFilePathDb = fullFileDbPath
-        this._sqlInitFilePath = sqlInitFilePath
+        this._storeDir = storeDir
+        this._sqlInit = sqlInit
         this._conn = this.makeConnection()
     }
 
@@ -43,13 +43,11 @@ export class PartConnect {
             afterCreate: (conn: Database, done: Function) => {
                 try {
                     if (!partDbExists) {
-                        console.debug("cоздание новой part_db")
+                        console.debug(`cоздание новой part_${this.partId}db`)
                         // создание структуры для несуществующих part_db
-                        conn.exec(this._sqlInitFilePath)
+                        conn.exec(this._sqlInit)
                     } else {
-                        console.debug("подключение к существующей part_db")
-                        // удаление индекса для существующей part_db
-                        conn.exec("DROP INDEX IF EXISTS idx_items")
+                        console.debug(`подключение к существующей part_${this.partId}db`)
                     }
                     conn.pragma("foreign_keys = 1")
                     conn.pragma("cache_size = -10000")
@@ -90,7 +88,7 @@ export class PartConnect {
 
     /** полное имя файла part_db */
     get fullFileDbName() {
-        return this._fullFilePathDb
+        return path.resolve(this._storeDir, `part_${this._partId}.db`)
     }
 
     /** запрос информации о файле по его имени */
@@ -108,6 +106,8 @@ export class PartConnect {
 
     /** обработать файл и записать полученные данные в part_db */
     async processFile(watchDir: string, file_info: FileInfo, hg: HandlerGroup) {
+        // удаление индексов если они существуют
+        await this._conn.raw("DROP INDEX IF EXISTS idx_items")
         const trx = await this._conn.transaction()
         try {
             // запись информации о файле

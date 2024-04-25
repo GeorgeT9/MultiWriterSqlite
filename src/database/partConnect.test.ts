@@ -9,7 +9,7 @@ describe("PartConnect test", () => {
     const testPartId = 100000
 
     it("should create file db", async () => {
-        const partConn = new PartConnect(testPartId, cfg.watchDir)
+        const partConn = new PartConnect(testPartId, cfg.storeDir, cfg.sqlInit)
         const res = await partConn.getFileByName("");
         console.log("part_db file: " + partConn.fullFileDbName)
         expect(partConn.partId).toBe(testPartId)

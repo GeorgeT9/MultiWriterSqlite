@@ -16,7 +16,12 @@ interface FailedWorkerNotification {
     fileInfo: FileInfo
 }
 
-export type WorkerNotification = SuccessWorkerNotification | FailedWorkerNotification
+interface ClosedConnectNotification {
+    status: "closed",
+    partId: number
+}
+
+export type WorkerNotification = SuccessWorkerNotification | FailedWorkerNotification | ClosedConnectNotification
 
 
 
@@ -32,5 +37,6 @@ class Dispatcher extends EventEmitter {
         this._storeDir = storeDir
         this._sqlInitFilePath = sqlInitFilePath
     }
+
 
 }
