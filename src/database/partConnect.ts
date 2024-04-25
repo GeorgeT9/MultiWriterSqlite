@@ -143,9 +143,7 @@ export class PartConnect {
     /** закрытие соединения с part_db с выполнением индексации */
     async close(vacuum: boolean = false) {
         // строим индекс над значениями items
-        await this._conn.schema.table("items", t => {
-            t.index('value', "idx_items")
-        })
+        await this._conn.raw("CREATE INDEX IF NOT EXISTS idx_items ON items (value)")
         if (vacuum) {
             await this._conn.raw("VACUUM")
         }

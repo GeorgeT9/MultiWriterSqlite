@@ -7,10 +7,10 @@ import { PartConnect } from "../database/partConnect";
 
 
 /** Тип уведомлений от воркера */
-export type WorkerNotification = 
-    SuccessWorkerNotification | 
-    FailedWorkerNotification | 
-    ClosedConnectNotification | 
+export type WorkerNotification =
+    SuccessWorkerNotification |
+    FailedWorkerNotification |
+    ClosedConnectNotification |
     InitNotification
 
 
@@ -47,7 +47,7 @@ export class Dispatcher {
     private readonly _limitSizePartDbKb: number
     private readonly _usePartId: Set<number> = new Set()
     private _sizeMap: Map<PartId, number> | null = null
-    private _nextNewPartId: number = -1
+    private _nextNewPartId: number = 0
 
     constructor(watchDir: string, storeDir: string, limitSizePartDbKb: number, sqlInit: string) {
         this._storeDir = storeDir
@@ -59,9 +59,42 @@ export class Dispatcher {
     async process(worksLimit: number = 4) {
         return new Promise(async (resolve, reject) => {
             const tasks = genFileNamesFromDir(this._watchDir, 0, [".doc", ".docx", ".csv", ".txt"])
+            
+            const nextTask = async () => {
+                const { done, value } = await tasks.next()
+                if (done) return null
+                return value
+            }
+            
             for (let i = 0; i < worksLimit; i++) {
-                const work = await this.makePartConnect()
-                work.on("message", (noti) => console.log(noti))
+                const worker = await this.makePartConnect()
+                worker.on("message", function (noti: WorkerNotification) {
+                    switch (noti.status) {
+                        case "init":
+                            console.log(`подключено к part id: ${noti.partId}`);
+                            //@ts-ignore this - ссылка на воркер, в котором назначен обработчик
+                            nextTask().then((task) => this.postMessage(task)) 
+                            break;
+                        case "success":
+                            console.log(`+ ${noti.fileInfo.fileName}`)
+                            //@ts-ignore
+                            nextTask().then((task) => this.postMessage(task)) 
+                            break;
+                        case "failed":
+                            console.log(`- ${noti.fileInfo.fileName}: ${noti.errorMessage}`)
+                            //@ts-ignore
+                            nextTask().then((task) => this.postMessage(task)) 
+                            break;
+                        case "closed":
+                            console.log(`part id: ${noti.partId} закрыто`)
+                            //@ts-ignore
+                            this.terminate()
+                            break;
+                        default:
+                            break;
+                    }
+                })
+
             }
         })
     }
@@ -108,7 +141,7 @@ export class Dispatcher {
         )
         const sizes = await Promise.all(
             connects.map(conn => conn.getFilesSizeKb())
-        ) 
+        )
         const sizeMap = connects
             .map((conn, i) => [conn.partId, sizes[i]] as const)
             .reduce((acc, cur) => acc.set(cur[0], cur[1]), new Map<number, number>)
@@ -119,8 +152,9 @@ export class Dispatcher {
     private async getExistsPartsId() {
         const dirEntris = await readdir(this._storeDir)
         return dirEntris
-            .filter(entry => entry.match(/\bpart_\d+\.db\b/))
-            .map(el => parseInt(el, 10))
+            .filter(entry => /\bpart_\d+\.db\b/.test(entry))
+            .map(el => parseInt(el.match(/\d+/)![0], 10))
+            .filter(el => el)
             .reduce((acc, cur) => acc.add(cur), new Set<number>)
     }
 

@@ -1,5 +1,5 @@
 {
-    "watchDir": "./__fixtures__",
+    "watchDir": "./data",
     "storeDir": "./store",
     "limitPartMb": 1000
 }
