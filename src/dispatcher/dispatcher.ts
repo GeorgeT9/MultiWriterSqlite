@@ -34,11 +34,34 @@ class Dispatcher {
 
     private readonly _storeDir: string
     private readonly _sqlInit: string
+    private readonly _limitSizePartDbKb: number
+    private readonly _usePartId: Set<number> = new Set()
     private _sizeMap: Map<PartId, number> | null = null
+    private _nextNewPartId: number = -1
 
-    constructor(watchDir: string, storeDir: string, sqlInit: string) {
+    constructor(watchDir: string, storeDir: string, limitSizePartDbKb: number, sqlInit: string) {
         this._storeDir = storeDir
         this._sqlInit = sqlInit
+        this._limitSizePartDbKb = limitSizePartDbKb
+    }
+
+    /** Вернет partId для создания подключения */
+    async getNextPartId() {
+        if (this._sizeMap == null) {
+            // выполнение инициализации значений размера существующих partDb и следующего нового partId 
+            await this.updateExistsPartsSize();
+            const existsMaxId = this._sizeMap!.size ? Math.max(...this._sizeMap!.keys()) : 0
+            this._nextNewPartId = existsMaxId + 1
+        }
+        const couples = [...this._sizeMap!.entries()]
+            .filter(([partId, sizeKb]) => (sizeKb < this._limitSizePartDbKb) && !this._usePartId.has(partId))
+            .map(([partId, _]) => partId)
+        if (couples.length) {
+            const partId = couples[0]
+            this._usePartId.add(partId)
+            return partId
+        }
+        return this._nextNewPartId++
     }
 
     /** Запрос размера файлов в каждой существующей partDb и вывод их в виде Map<partId, sizeKb> */
