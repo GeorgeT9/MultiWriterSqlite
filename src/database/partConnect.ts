@@ -43,16 +43,13 @@ export class PartConnect {
             afterCreate: (conn: Database, done: Function) => {
                 try {
                     if (!partDbExists) {
-                        console.debug(`cоздание новой part_${this.partId}db`)
                         // создание структуры для несуществующих part_db
                         conn.exec(this._sqlInit)
-                    } else {
-                        console.debug(`подключение к существующей part_${this.partId}db`)
-                    }
+                    } 
                     conn.pragma("foreign_keys = 1")
                     conn.pragma("cache_size = -10000")
                     conn.pragma("locking_mode = EXCLUSIVE")
-                    conn.pragma("journal_mode = PERSIST")
+                    conn.pragma("journal_mode = OFF")
                     conn.pragma("synchronous = OFF")
                     done(null, conn)
                 } catch (err) {

@@ -11,7 +11,7 @@ import {WorkerNotification} from "./dispatcher"
 
 describe("worker test", () => {
 
-    const partDbFileName = path.resolve(cfg.storeDir, "part_0.db")
+    const partDbFileName = path.resolve(cfg.storeDir, "part_10000.db")
 
     afterEach(async () => {
         await rm(partDbFileName)
@@ -20,7 +20,7 @@ describe("worker test", () => {
     it("make one worker", async () => {
         const w = new Worker("./dist/dispatcher/worker.js", {
             workerData: {
-                partId: 0,
+                partId: 10000,
                 sqlInit: cfg.sqlInit,
                 watchDir: cfg.watchDir,
                 storeDir: cfg.storeDir
