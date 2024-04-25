@@ -1,7 +1,9 @@
+import { workerData, Worker } from "node:worker_threads"
 import { readdir } from "node:fs/promises"
 import { FileInfo } from "../files/dirReader";
 import path from "node:path";
 import { PartConnect } from "../database/partConnect";
+import { WorkerData } from "./worker";
 
 
 /** Тип уведомлений от воркера */
@@ -33,6 +35,7 @@ type PartId = number
 class Dispatcher {
 
     private readonly _storeDir: string
+    private readonly _watchDir: string
     private readonly _sqlInit: string
     private readonly _limitSizePartDbKb: number
     private readonly _usePartId: Set<number> = new Set()
@@ -41,12 +44,26 @@ class Dispatcher {
 
     constructor(watchDir: string, storeDir: string, limitSizePartDbKb: number, sqlInit: string) {
         this._storeDir = storeDir
+        this._watchDir = watchDir
         this._sqlInit = sqlInit
         this._limitSizePartDbKb = limitSizePartDbKb
     }
 
+    async makePartConnect() {
+        const partId = await this.getNextPartId()
+        const worker = new Worker(path.resolve(__dirname, "worker.js"), {
+            workerData: {
+                partId,
+                sqlInit: this._sqlInit,
+                watchDir: this._watchDir,
+                storeDir: this._storeDir
+            } satisfies WorkerData
+        })
+        
+    }
+
     /** Вернет partId для создания подключения */
-    async getNextPartId() {
+    private async getNextPartId() {
         if (this._sizeMap == null) {
             // выполнение инициализации значений размера существующих partDb и следующего нового partId 
             await this.updateExistsPartsSize();

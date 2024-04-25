@@ -11,7 +11,7 @@ import {WorkerNotification} from "./dispatcher"
 
 describe("worker test", () => {
 
-    const partDbFileName = path.resolve(cfg.storeDir, "part_test0.db")
+    const partDbFileName = path.resolve(cfg.storeDir, "part_0.db")
 
     afterEach(async () => {
         await rm(partDbFileName)
@@ -23,7 +23,7 @@ describe("worker test", () => {
                 partId: 0,
                 sqlInit: cfg.sqlInit,
                 watchDir: cfg.watchDir,
-                fullFilePathDb: partDbFileName
+                storeDir: cfg.storeDir
             } satisfies WorkerData
         })
         const out: WorkerNotification[] = []
