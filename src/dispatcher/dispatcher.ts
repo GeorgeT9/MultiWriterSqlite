@@ -1,13 +1,18 @@
 import { workerData, Worker } from "node:worker_threads"
-import { readdir } from "node:fs/promises"
-import { FileInfo } from "../files/dirReader";
 import path from "node:path";
-import { PartConnect } from "../database/partConnect";
 import { WorkerData } from "./worker";
+import { readdir } from "node:fs/promises"
+import { FileInfo, genFileNamesFromDir } from "../files/dirReader";
+import { PartConnect } from "../database/partConnect";
 
 
 /** Тип уведомлений от воркера */
-export type WorkerNotification = SuccessWorkerNotification | FailedWorkerNotification | ClosedConnectNotification
+export type WorkerNotification = 
+    SuccessWorkerNotification | 
+    FailedWorkerNotification | 
+    ClosedConnectNotification | 
+    InitNotification
+
 
 interface SuccessWorkerNotification {
     status: "success",
@@ -27,12 +32,14 @@ interface ClosedConnectNotification {
     partId: number
 }
 
+interface InitNotification {
+    status: "init",
+    partId: number
+}
 
 type PartId = number
 
-
-
-class Dispatcher {
+export class Dispatcher {
 
     private readonly _storeDir: string
     private readonly _watchDir: string
@@ -49,7 +56,18 @@ class Dispatcher {
         this._limitSizePartDbKb = limitSizePartDbKb
     }
 
-    async makePartConnect() {
+    async process(worksLimit: number = 4) {
+        return new Promise(async (resolve, reject) => {
+            const tasks = genFileNamesFromDir(this._watchDir, 0, [".doc", ".docx", ".csv", ".txt"])
+            for (let i = 0; i < worksLimit; i++) {
+                const work = await this.makePartConnect()
+                work.on("message", (noti) => console.log(noti))
+            }
+        })
+    }
+
+    /**  Создаст подключение в отдельном потоке и вернет worker */
+    private async makePartConnect() {
         const partId = await this.getNextPartId()
         const worker = new Worker(path.resolve(__dirname, "worker.js"), {
             workerData: {
@@ -59,7 +77,7 @@ class Dispatcher {
                 storeDir: this._storeDir
             } satisfies WorkerData
         })
-        
+        return worker
     }
 
     /** Вернет partId для создания подключения */

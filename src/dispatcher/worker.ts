@@ -23,6 +23,10 @@ const {
 
 
 const partConn = new PartConnect(partId, storeDir, sqlInit)
+parentPort?.postMessage({
+    status: "init",
+    partId
+} satisfies WorkerNotification)
 
 // обработка файлов
 parentPort?.on("message", function(msg: FileInfo | null) {
