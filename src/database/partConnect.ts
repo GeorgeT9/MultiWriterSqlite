@@ -10,6 +10,7 @@ import { TextBox } from "../handlers/handlers.types"
 import { FileInfo } from "../files/dirReader"
 import { getTextExtractorFromFile } from "../files/textExtractors/textExtractor"
 import { LinerStream } from "../files/linerStream"
+import { TextBlockStream } from "../files/textBlockStream"
 import { HandlerTransformerStream } from "../handlers/handlerTransformerStream"
 
 
@@ -118,14 +119,14 @@ export class PartConnect {
             const writer = new FilePartWriter(trx, fileId)
             await pipeline(
                 getTextExtractorFromFile(path.resolve(watchDir, file_info.fileName)),
-                new LinerStream(),
+                new TextBlockStream(),
                 new HandlerTransformerStream(hg),
                 writer
             )
             trx.commit()
         } catch (err) {
             trx.rollback(err)
-            throw new Error(`Ошибка при записи файла ${file_info.fileName}`, { cause: err })
+            throw new Error(`Ошибка при записи файла ${file_info.fileName}: ${(err as Error).message}`)
         }
     }
 
@@ -164,7 +165,7 @@ class FilePartWriter extends Writable {
     constructor(conn: Knex, fileId: number) {
         super({
             objectMode: true,
-            highWaterMark: 5000
+            highWaterMark: 100
         })
         this._conn = conn
         this._fileId = fileId

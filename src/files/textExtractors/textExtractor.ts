@@ -10,7 +10,7 @@ export function getTextExtractorFromFile(fileName: string) {
             return wordTextExtractor(fileName)
         case '.csv':
         case '.txt':
-            return createReadStream(fileName, {highWaterMark: 16*1024})
+            return createReadStream(fileName, {highWaterMark: 8*1024})
         default:
             throw new Error(`Текстовый экстрактор для файл ${fileName} не определен`)
     }
