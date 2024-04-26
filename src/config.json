@@ -1,5 +1,6 @@
 {
     "watchDir": "./data",
     "storeDir": "./store",
-    "limitPartMb": 100
+    "limitPartMb": 500,
+    "countWorkers": 4
 }

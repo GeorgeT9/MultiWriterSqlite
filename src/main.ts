@@ -6,7 +6,7 @@ async function main() {
 
     const dis = new Dispatcher(cfg.watchDir, cfg.storeDir, cfg.limitPartMb * 1024, cfg.sqlInit)
     console.time('app')
-    await dis.process();
+    await dis.process(cfg.countWorkers);
     console.timeEnd('app')
 }
 

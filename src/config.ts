@@ -3,7 +3,7 @@ import path from "node:path"
 import fs from "node:fs"
 
 
-let { storeDir, watchDir, limitPartMb } = cfg
+let { storeDir, watchDir, limitPartMb, countWorkers } = cfg
 
 if (storeDir == undefined ) {
     console.error('Не задан обязательный конфигурационный параметр storeDir')
@@ -32,9 +32,12 @@ try {
     throw(new Error("Ошибка чтения инфструкций инициализации part_db: " + (err as Error).message))
 }
 
+countWorkers = countWorkers || 4
+
 export default {
     storeDir,
     watchDir,
     limitPartMb,
-    sqlInit
+    sqlInit,
+    countWorkers
 }
