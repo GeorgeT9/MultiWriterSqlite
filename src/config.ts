@@ -3,7 +3,7 @@ import path from "node:path"
 import fs from "node:fs"
 
 
-let { storeDir, watchDir, limitPartMb, countWorkers } = cfg
+let { storeDir, watchDir, limitPartMb, countWorkers, onlyThisExts } = cfg
 
 if (storeDir == undefined ) {
     console.error('Не задан обязательный конфигурационный параметр storeDir')
@@ -33,11 +33,13 @@ try {
 }
 
 countWorkers = countWorkers || 4
+onlyThisExts = onlyThisExts || [".txt", ".csv", ".doc", ".docx"]
 
 export default {
     storeDir,
     watchDir,
     limitPartMb,
     sqlInit,
-    countWorkers
+    countWorkers,
+    onlyThisExts
 }

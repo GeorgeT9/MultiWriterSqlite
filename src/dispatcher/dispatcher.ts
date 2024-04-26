@@ -45,20 +45,29 @@ export class Dispatcher {
     private readonly _watchDir: string
     private readonly _sqlInit: string
     private readonly _limitSizePartDbKb: number
+    private readonly _afterModyTimeMs: number
+    private readonly _onlyThisExts: string[]
     private readonly _usePartId: Set<number> = new Set()
     private _sizeMap: Map<PartId, number> | null = null
     private _nextNewPartId: number = 0
 
-    constructor(watchDir: string, storeDir: string, limitSizePartDbKb: number, sqlInit: string) {
+    constructor(watchDir: string, storeDir: string, afterModyTimeMs: number, 
+        onlyThisExts: string[], limitSizePartDbKb: number, sqlInit: string) {
         this._storeDir = storeDir
         this._watchDir = watchDir
         this._sqlInit = sqlInit
         this._limitSizePartDbKb = limitSizePartDbKb
+        this._afterModyTimeMs = afterModyTimeMs
+        this._onlyThisExts = onlyThisExts
     }
 
+    /**
+     * Выполнение обработки файлов из наблюдаемого каталога и параллельная запись в part_db файлы
+     * @param worksLimit число параллельных воркеров
+     */
     async process(worksLimit: number = 4) {
         return new Promise(async (resolve, _) => {
-            const tasks = genFileNamesFromDir(this._watchDir, 0, [".doc", ".docx", ".csv", ".txt"])
+            const tasks = genFileNamesFromDir(this._watchDir, this._afterModyTimeMs, this._onlyThisExts)
             let runningWorkers = 0
 
             const nextTask = async () => {

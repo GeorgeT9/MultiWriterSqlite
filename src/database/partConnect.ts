@@ -1,15 +1,14 @@
 import { Knex, knex } from "knex"
 import { Database } from "better-sqlite3"
 import path from "node:path";
+import fs from "node:fs"
 import { Writable } from "node:stream"
 import { pipeline } from "node:stream/promises"
-import fs from "node:fs"
 import { FileDb, ItemDb, TextBoxDb } from "./schema";
 import { HandlerGroup } from "../handlers/handlerGroup";
 import { TextBox } from "../handlers/handlers.types"
 import { FileInfo } from "../files/dirReader"
 import { getTextExtractorFromFile } from "../files/textExtractors/textExtractor"
-import { LinerStream } from "../files/linerStream"
 import { TextBlockStream } from "../files/textBlockStream"
 import { HandlerTransformerStream } from "../handlers/handlerTransformerStream"
 
@@ -26,8 +25,8 @@ export class PartConnect {
 
     /**
      * @param partId 
-     * @param fullFileDbPath полный путь к файлу part_db 
-     * @param sqlInit инструкции инициализации создаваемых part_db
+     * @param storeDir директория где находятся part_db 
+     * @param sqlInit набор инструкций инициализации создаваемых part_db
      */
     constructor(partId: number, storeDir: string, sqlInit: string) {
         this._partId = partId

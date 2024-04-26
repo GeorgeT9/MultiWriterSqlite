@@ -2,5 +2,6 @@
     "watchDir": "./__fixtures__",
     "storeDir": "./store",
     "limitPartMb": 500,
-    "countWorkers": 4
+    "countWorkers": 4,
+    "onlyThisExts": [".doc", ".docx", ".csv", ".txt"]
 }
