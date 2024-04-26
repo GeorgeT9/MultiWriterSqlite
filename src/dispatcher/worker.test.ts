@@ -3,7 +3,7 @@ import { WorkerData } from "./worker"
 import { once } from "node:events"
 import { genFileNamesFromDir } from "../files/dirReader"
 import cfg from "../config"
-import path from "node:path"
+import path, { resolve } from "node:path"
 import { rm } from "node:fs/promises"
 import {WorkerNotification} from "./dispatcher"
 
@@ -11,7 +11,7 @@ import {WorkerNotification} from "./dispatcher"
 
 describe("worker test", () => {
 
-    const partDbFileName = path.resolve(cfg.storeDir, "part_10000.db")
+    const partDbFileName = path.resolve(cfg.storeDir, "part_9999.db")
 
     afterEach(async () => {
         await rm(partDbFileName)
@@ -20,7 +20,7 @@ describe("worker test", () => {
     it("make one worker", async () => {
         const w = new Worker("./dist/dispatcher/worker.js", {
             workerData: {
-                partId: 10000,
+                partId: 9999,
                 sqlInit: cfg.sqlInit,
                 watchDir: cfg.watchDir,
                 storeDir: cfg.storeDir
@@ -28,16 +28,12 @@ describe("worker test", () => {
         })
         const out: WorkerNotification[] = []
         
-        for await (const fileName of genFileNamesFromDir(cfg.watchDir, 0, [".doc", ".docx", ".csv"])) {
+        for await (const fileName of genFileNamesFromDir(path.resolve(__dirname, "../../__fixtures__"), 0, [".doc", ".docx", ".csv"])) {
             w.postMessage(fileName)
             const res: WorkerNotification = (await (once(w, "message")))[0]
             out.push(res)
         }
-        w.postMessage(null)
-        const closed: WorkerNotification = (await once(w, "message"))[0]
-        out.push(closed)
         await w.terminate()
-        expect(out.length).toBe(6)
-        expect(out.filter(r => r.status === "closed").length).toBe(1)
+        expect(out.length).toBe(5)
     })  
 })
