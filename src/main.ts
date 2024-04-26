@@ -8,7 +8,6 @@ async function main() {
     console.time('app')
     await dis.process();
     console.timeEnd('app')
-    console.log("end")
 }
 
 

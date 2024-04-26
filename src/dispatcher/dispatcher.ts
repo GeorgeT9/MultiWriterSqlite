@@ -57,9 +57,10 @@ export class Dispatcher {
     }
 
     async process(worksLimit: number = 4) {
-        return new Promise(async (resolve, reject) => {
+        return new Promise(async (resolve, _) => {
             const tasks = genFileNamesFromDir(this._watchDir, 0, [".doc", ".docx", ".csv", ".txt"])
-            
+            let runningWorkers = 0
+
             const nextTask = async () => {
                 const { done, value } = await tasks.next()
                 if (done) return null
@@ -68,6 +69,7 @@ export class Dispatcher {
             
             for (let i = 0; i < worksLimit; i++) {
                 const worker = await this.makePartConnect()
+                runningWorkers += 1
                 worker.on("message", function (noti: WorkerNotification) {
                     switch (noti.status) {
                         case "init":
@@ -89,6 +91,10 @@ export class Dispatcher {
                             console.log(`part id: ${noti.partId} закрыто`)
                             //@ts-ignore
                             this.terminate()
+                            runningWorkers -= 1
+                            if (runningWorkers === 0) {
+                                resolve(null)
+                            }
                             break;
                         default:
                             break;
